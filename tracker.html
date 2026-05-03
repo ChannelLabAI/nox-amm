@@ -294,7 +294,7 @@
     const BATCH=5;
     for(let i=0;i<rows.length;i+=BATCH) {
       await Promise.all(rows.slice(i,i+BATCH).map(async row => {
-        if(row.type!=='買'&&row.type!=='賣') return; // staking txs have no USDT
+        if(row.type==='質押'||row.type==='解質押'||row.type==='質押收益') return; // staking has no USDT
         try {
           // No ?type filter — it's unsupported on this endpoint and returns nothing
           const r = await fetch(`${BS}/transactions/${row.hash}/token-transfers`);
@@ -322,6 +322,13 @@
         } catch(e) {}
       }));
       if(i+BATCH<rows.length) await sleep(150);
+    }
+
+    // Reclassify 轉入/轉出 that turned out to have USDT → they're swaps from unknown pools
+    for(const row of rows) {
+      if((row.type==='轉入'||row.type==='轉出') && row.usdtAmt!=null) {
+        row.type = row.isBuy ? '買' : '賣';
+      }
     }
 
     // Stats — only count pool buy/sell trades + staking
