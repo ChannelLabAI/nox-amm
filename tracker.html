@@ -371,11 +371,12 @@
     });
   }
 
-  async function findRelatedWallets(mainWallet) {
+  async function findRelatedWallets(mainWallet, noxRows=[]) {
     const txns = await fetchTransactions(mainWallet);
     const w = mainWallet.toLowerCase();
     const addrCount={}, addrFlow={};
 
+    // Scan ETH-level transactions
     for(const tx of txns) {
       const from=(tx.from?.hash||'').toLowerCase();
       const to  =(tx.to?.hash||'').toLowerCase();
@@ -383,6 +384,18 @@
       const other = isOut ? to : from;
       if(!other||other===w||KNOWN_CONTRACTS.has(other)) continue;
       const flow = isOut?'out':'in';
+      addrCount[other]=(addrCount[other]||0)+1;
+      if(!addrFlow[other]) addrFlow[other]=flow;
+      else if(addrFlow[other]!==flow) addrFlow[other]='both';
+    }
+
+    // Also scan NOX token transfer counterparties (catches P2P token transfers
+    // that don't appear in ETH-level tx because the contract is the tx.to)
+    for(const row of noxRows) {
+      if(row.type!=='轉入'&&row.type!=='轉出') continue;
+      const other = row.type==='轉入' ? row.fromAddr : row.toAddr;
+      if(!other||other===w||KNOWN_CONTRACTS.has(other)||STAKING_ADDRS.has(other)) continue;
+      const flow = row.type==='轉入'?'in':'out';
       addrCount[other]=(addrCount[other]||0)+1;
       if(!addrFlow[other]) addrFlow[other]=flow;
       else if(addrFlow[other]!==flow) addrFlow[other]='both';
@@ -452,7 +465,7 @@
       progressEl.style.display='block';
       progressEl.textContent='正在掃描關聯錢包…';
 
-      const related=await findRelatedWallets(wallet);
+      const related=await findRelatedWallets(wallet, d.rows);
 
       if(!related.length) {
         document.getElementById('related-count').textContent='無';
