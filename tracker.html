@@ -139,8 +139,8 @@
       <div class="stat-card"><div class="stat-label">持有 NOX（估）</div><div class="stat-value gold" id="s-net-nox">—</div><div class="stat-sub" id="s-net-usdt">—</div></div>
       <div class="stat-card"><div class="stat-label">均買價</div><div class="stat-value" id="s-avg-buy">—</div><div class="stat-sub">USDT/NOX</div></div>
       <div class="stat-card"><div class="stat-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub">USDT/NOX</div></div>
-      <div class="stat-card"><div class="stat-label">質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub">NOX</div></div>
-      <div class="stat-card" style="border-color:rgba(139,92,246,0.3)"><div class="stat-label">質押率</div><div class="stat-value" style="color:var(--purple)" id="s-stake-rate">—</div><div class="stat-sub">質押 ÷ 買入</div></div>
+      <div class="stat-card"><div class="stat-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub">質押-解質押 NOX</div></div>
+      <div class="stat-card" style="border-color:rgba(139,92,246,0.3)"><div class="stat-label">質押率</div><div class="stat-value" style="color:var(--purple)" id="s-stake-rate">—</div><div class="stat-sub">(質押-解質押) ÷ 買入</div></div>
     </div>
   </div>
 
@@ -312,19 +312,21 @@
     // Stats — only count pool buy/sell trades + staking
     let totalBuyNox=0,totalBuyUsdt=0,buyCount=0;
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
-    let totalStakeNox=0;
+    let totalStakeNox=0, totalUnstakeNox=0;
     for(const row of rows) {
-      if(row.type==='買') { buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
-      if(row.type==='賣') { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
-      if(row.type==='質押') totalStakeNox+=row.noxAmt;
+      if(row.type==='買')    { buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
+      if(row.type==='賣')    { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
+      if(row.type==='質押')   totalStakeNox+=row.noxAmt;
+      if(row.type==='解質押') totalUnstakeNox+=row.noxAmt;
     }
     const netNox = totalBuyNox - totalSellNox;
-    const stakeRate = totalBuyNox>0 && totalStakeNox>0 ? totalStakeNox/totalBuyNox : null;
+    const netStakeNox = totalStakeNox - totalUnstakeNox;
+    const stakeRate = totalBuyNox>0 && netStakeNox>0 ? netStakeNox/totalBuyNox : null;
 
     return {
       rows, buyCount, sellCount,
       totalBuyNox, totalBuyUsdt, totalSellNox, totalSellUsdt,
-      totalStakeNox, stakeRate,
+      totalStakeNox, totalUnstakeNox, netStakeNox, stakeRate,
       avgBuy:  buyCount&&totalBuyUsdt   ? totalBuyUsdt/totalBuyNox   : null,
       avgSell: sellCount&&totalSellUsdt ? totalSellUsdt/totalSellNox : null,
       netNox,
@@ -427,7 +429,7 @@
         document.getElementById('s-net-usdt').textContent=(d.netUsdt>=0?'+':'')+fmt(d.netUsdt,2)+' USDT';
         document.getElementById('s-avg-buy').textContent=d.avgBuy?fmt(d.avgBuy,4):'—';
         document.getElementById('s-avg-sell').textContent=d.avgSell?fmt(d.avgSell,4):'—';
-        document.getElementById('s-stake-nox').textContent=fmt(d.totalStakeNox,0)+' NOX';
+        document.getElementById('s-stake-nox').textContent=fmt(d.netStakeNox,0)+' NOX';
         document.getElementById('s-stake-rate').textContent=d.stakeRate!=null?fmt(d.stakeRate*100,1)+'%':'—';
         document.getElementById('stats-section').style.display='block';
         document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
