@@ -73,6 +73,9 @@
   .badge-in     { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.08);   color:#86EFAC;       font-size:11px; font-weight:700; letter-spacing:1px; }
   .badge-out    { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(148,163,184,0.10); color:#94A3B8;       font-size:11px; font-weight:700; letter-spacing:1px; }
 
+  .drill-btn { padding:3px 10px; border-radius:6px; border:1px solid rgba(212,168,66,0.3); background:transparent; color:var(--gold); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
+  .drill-btn:hover { background:rgba(212,168,66,0.12); border-color:var(--gold); }
+
   .filter-bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
   .filter-btn { padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--text-secondary); font-family:'Noto Sans TC',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; }
   .filter-btn:hover { border-color:rgba(212,168,66,0.4); color:var(--text-primary); }
@@ -392,6 +395,12 @@
       .map(([addr])=>({addr, flow:addrFlow[addr]}));
   }
 
+  function drillInto(addr) {
+    document.getElementById('wallet-input').value = addr;
+    window.scrollTo({top:0, behavior:'smooth'});
+    search();
+  }
+
   function toggleRelated(id) {
     const body=document.getElementById('rb-'+id);
     const arrow=document.getElementById('arrow-'+id);
@@ -469,6 +478,7 @@
             <span class="flow-badge ${flowCls}">${flowLbl}</span>
             <span class="related-addr">${addr}</span>
             <span class="related-summary" id="rsummary-${cid}">查詢中…</span>
+            <button class="drill-btn" onclick="event.stopPropagation();drillInto('${addr}')" title="切換為主查錢包">🔍 查詢</button>
             <span class="related-expand" id="arrow-${cid}">▶</span>
           </div>
           <div class="related-body" id="rb-${cid}">
