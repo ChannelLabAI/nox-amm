@@ -221,54 +221,58 @@
     return items;
   }
 
-  function processNoxData(wallet, noxItems, usdtItems) {
+  async function fetchNoxData(wallet) {
     const w = wallet.toLowerCase();
+    const noxItems = await fetchTokenTransfers(wallet, NOX_CA);
 
-    // Build USDT lookup by transaction_hash
-    const usdtMap = {};
-    for(const item of usdtItems) {
-      const h = item.transaction_hash;
-      if(!h) continue;
-      if(!usdtMap[h]) usdtMap[h]=[];
-      usdtMap[h].push(item);
+    // Build basic rows
+    const rows = noxItems.filter(item=>item.transaction_hash).map(item => ({
+      hash:   item.transaction_hash,
+      ts:     item.timestamp,
+      isBuy:  item.to?.hash?.toLowerCase()===w,
+      noxAmt: parseInt(item.total?.value||'0') / Math.pow(10, parseInt(item.total?.decimals||'18')),
+      usdtAmt: null,
+      price:   null,
+    }));
+
+    // Per-tx USDT lookup in batches (more reliable than cross-referencing two lists)
+    const BATCH=5;
+    for(let i=0;i<rows.length;i+=BATCH) {
+      await Promise.all(rows.slice(i,i+BATCH).map(async row => {
+        try {
+          const r = await fetch(`${BS}/transactions/${row.hash}/token-transfers?type=ERC-20`);
+          if(!r.ok) return;
+          const items = (await r.json()).items||[];
+          // Direction-aware: BUY→wallet is from; SELL→wallet is to
+          let found = items.find(t =>
+            (t.token?.address||'').toLowerCase()===USDT_CA &&
+            parseInt(t.total?.value||'0')>0 &&
+            (row.isBuy
+              ? (t.from?.hash||'').toLowerCase()===w
+              : (t.to?.hash||'').toLowerCase()===w)
+          );
+          // Fallback: any positive USDT in this tx
+          if(!found) found = items.find(t =>
+            (t.token?.address||'').toLowerCase()===USDT_CA &&
+            parseInt(t.total?.value||'0')>0
+          );
+          if(found) {
+            const v = parseInt(found.total.value) / Math.pow(10, parseInt(found.total?.decimals||'6'));
+            row.usdtAmt = v;
+            row.price   = row.noxAmt>0 ? v/row.noxAmt : null;
+          }
+        } catch(e) {}
+      }));
+      if(i+BATCH<rows.length) await sleep(150);
     }
 
+    // Stats
     let totalBuyNox=0,totalBuyUsdt=0,buyCount=0;
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
-
-    const rows = noxItems.filter(item=>item.transaction_hash).map(item => {
-      const isBuy  = item.to?.hash?.toLowerCase()===w;
-      const dec    = parseInt(item.total?.decimals||'18');
-      const noxAmt = parseInt(item.total?.value||'0') / Math.pow(10,dec);
-
-      // Find USDT in same tx — direction-aware matching
-      let usdtAmt = null;
-      const sameTxUsdt = usdtMap[item.transaction_hash]||[];
-      // First pass: direction-correct (BUY→wallet sends USDT; SELL→wallet receives USDT)
-      for(const ut of sameTxUsdt) {
-        const ud  = parseInt(ut.total?.decimals||'6');
-        const v   = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
-        if(v<=0) continue;
-        const uFrom = (ut.from?.hash||'').toLowerCase();
-        const uTo   = (ut.to?.hash||'').toLowerCase();
-        if(isBuy ? uFrom===w : uTo===w){ usdtAmt=v; break; }
-      }
-      // Fallback: any USDT in same tx
-      if(usdtAmt==null) {
-        for(const ut of sameTxUsdt) {
-          const ud = parseInt(ut.total?.decimals||'6');
-          const v  = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
-          if(v>0){ usdtAmt=v; break; }
-        }
-      }
-
-      const price = (usdtAmt&&noxAmt) ? usdtAmt/noxAmt : null;
-
-      if(isBuy)  { buyCount++;  totalBuyNox+=noxAmt;  totalBuyUsdt+=usdtAmt||0; }
-      else        { sellCount++; totalSellNox+=noxAmt; totalSellUsdt+=usdtAmt||0; }
-
-      return { hash:item.transaction_hash, ts:item.timestamp, isBuy, noxAmt, usdtAmt, price };
-    });
+    for(const row of rows) {
+      if(row.isBuy){ buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
+      else          { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
+    }
 
     return {
       rows, buyCount, sellCount,
@@ -278,14 +282,6 @@
       netNox:  totalBuyNox-totalSellNox,
       netUsdt: totalSellUsdt-totalBuyUsdt,
     };
-  }
-
-  async function fetchNoxData(wallet) {
-    const [noxItems, usdtItems] = await Promise.all([
-      fetchTokenTransfers(wallet, NOX_CA),
-      fetchTokenTransfers(wallet, USDT_CA),
-    ]);
-    return processNoxData(wallet, noxItems, usdtItems);
   }
 
   function buildTxTable(rows) {
