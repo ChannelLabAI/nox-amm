@@ -278,7 +278,7 @@
           const items = Array.isArray(j) ? j : (j.items||[]);
           // Direction-aware: BUY→wallet paid USDT (from=wallet); SELL→wallet received USDT (to=wallet)
           let found = items.find(t =>
-            (t.token?.address||'').toLowerCase()===USDT_CA &&
+            (t.token?.address_hash||t.token?.address||'').toLowerCase()===USDT_CA &&
             parseInt(t.total?.value||'0')>0 &&
             (row.isBuy
               ? (t.from?.hash||'').toLowerCase()===w
@@ -286,7 +286,7 @@
           );
           // Fallback: any positive USDT in this tx
           if(!found) found = items.find(t =>
-            (t.token?.address||'').toLowerCase()===USDT_CA &&
+            (t.token?.address_hash||t.token?.address||'').toLowerCase()===USDT_CA &&
             parseInt(t.total?.value||'0')>0
           );
           if(found) {
