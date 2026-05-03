@@ -65,8 +65,11 @@
   .tx-table tr:hover td { background:rgba(212,168,66,0.03); }
   .tx-table tr:last-child td { border-bottom:none; }
 
-  .badge-buy  { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.12);  color:var(--green); font-size:11px; font-weight:700; letter-spacing:1px; }
-  .badge-sell { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(239,68,68,0.12);  color:var(--red);   font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-buy    { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.12);   color:var(--green);  font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-sell   { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(239,68,68,0.12);   color:var(--red);    font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-stake  { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(139,92,246,0.12);  color:var(--purple); font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-unstake{ display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(212,168,66,0.12);  color:var(--gold);   font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-reward { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(6,182,212,0.12);   color:#06B6D4;       font-size:11px; font-weight:700; letter-spacing:1px; }
 
   .tx-link { color:var(--gold); text-decoration:none; font-size:11px; padding:3px 9px; border:1px solid rgba(212,168,66,0.3); border-radius:4px; transition:all 0.2s; white-space:nowrap; }
   .tx-link:hover { background:rgba(212,168,66,0.1); border-color:var(--gold); }
@@ -157,9 +160,11 @@
 </div>
 
 <script>
-  const NOX_CA  = '0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55';
-  const USDT_CA = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
-  const BS      = 'https://arbitrum.blockscout.com/api/v2';
+  const NOX_CA    = '0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55';
+  const USDT_CA   = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
+  const POOL_CA   = '0xd3211dcd145990f740f8607fb0364080d718e3e3';
+  const STAKING_CA= '0x2963103b7d93f853115c7aa055cfacec0ed77328';
+  const BS        = 'https://arbitrum.blockscout.com/api/v2';
 
   const KNOWN_CONTRACTS = new Set([
     '0x0000000000000000000000000000000000000000',
@@ -186,6 +191,26 @@
 
   function shortAddr(addr) { return addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '—'; }
   function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+  function classifyTx(row) {
+    const from = row.fromAddr;
+    const to   = row.toAddr;
+    if(from===POOL_CA || to===POOL_CA) return row.isBuy ? '買' : '賣';
+    if(to===STAKING_CA)   return '質押';
+    if(from===STAKING_CA) return row.noxAmt < 100 ? '質押收益' : '解質押';
+    return row.isBuy ? '買' : '賣';
+  }
+
+  function typeBadge(type) {
+    const map = {'買':'badge-buy','賣':'badge-sell','質押':'badge-stake','解質押':'badge-unstake','質押收益':'badge-reward'};
+    return `<span class="${map[type]||'badge-buy'}">${type}</span>`;
+  }
+
+  function typeColor(type) {
+    return type==='買'||type==='解質押'||type==='質押收益' ? 'var(--green)'
+         : type==='賣'||type==='質押' ? 'var(--red)'
+         : 'var(--text-primary)';
+  }
 
   // Fetch all pages of token transfers (up to maxPages)
   async function fetchTokenTransfers(address, tokenContract, maxPages=6) {
@@ -226,24 +251,28 @@
     const noxItems = await fetchTokenTransfers(wallet, NOX_CA);
 
     // Build basic rows
-    const rows = noxItems.filter(item=>item.transaction_hash).map(item => ({
-      hash:   item.transaction_hash,
-      ts:     item.timestamp,
-      isBuy:  item.to?.hash?.toLowerCase()===w,
-      noxAmt: parseInt(item.total?.value||'0') / Math.pow(10, parseInt(item.total?.decimals||'18')),
-      usdtAmt: null,
-      price:   null,
-    }));
+    const rows = noxItems.filter(item=>item.transaction_hash).map(item => {
+      const from = (item.from?.hash||'').toLowerCase();
+      const to   = (item.to?.hash||'').toLowerCase();
+      const isBuy = to===w;
+      const noxAmt = parseInt(item.total?.value||'0') / Math.pow(10, parseInt(item.total?.decimals||'18'));
+      const row = { hash: item.transaction_hash, ts: item.timestamp, fromAddr: from, toAddr: to, isBuy, noxAmt, usdtAmt: null, price: null, type: null };
+      row.type = classifyTx(row);
+      return row;
+    });
 
-    // Per-tx USDT lookup in batches (more reliable than cross-referencing two lists)
+    // Per-tx USDT lookup in batches (only for buy/sell pool trades)
     const BATCH=5;
     for(let i=0;i<rows.length;i+=BATCH) {
       await Promise.all(rows.slice(i,i+BATCH).map(async row => {
+        if(row.type!=='買'&&row.type!=='賣') return; // staking txs have no USDT
         try {
-          const r = await fetch(`${BS}/transactions/${row.hash}/token-transfers?type=ERC-20`);
+          // No ?type filter — it's unsupported on this endpoint and returns nothing
+          const r = await fetch(`${BS}/transactions/${row.hash}/token-transfers`);
           if(!r.ok) return;
-          const items = (await r.json()).items||[];
-          // Direction-aware: BUY→wallet is from; SELL→wallet is to
+          const j = await r.json();
+          const items = Array.isArray(j) ? j : (j.items||[]);
+          // Direction-aware: BUY→wallet paid USDT (from=wallet); SELL→wallet received USDT (to=wallet)
           let found = items.find(t =>
             (t.token?.address||'').toLowerCase()===USDT_CA &&
             parseInt(t.total?.value||'0')>0 &&
@@ -266,12 +295,12 @@
       if(i+BATCH<rows.length) await sleep(150);
     }
 
-    // Stats
+    // Stats — only count pool buy/sell trades
     let totalBuyNox=0,totalBuyUsdt=0,buyCount=0;
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
     for(const row of rows) {
-      if(row.isBuy){ buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
-      else          { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
+      if(row.type==='買') { buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
+      if(row.type==='賣') { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
     }
 
     return {
@@ -292,8 +321,8 @@
       </tr></thead>
       <tbody>${rows.map(r=>`<tr>
         <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
-        <td><span class="${r.isBuy?'badge-buy':'badge-sell'}">${r.isBuy?'BUY':'SELL'}</span></td>
-        <td style="color:${r.isBuy?'var(--green)':'var(--red)'};font-weight:700">${r.isBuy?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
+        <td>${typeBadge(r.type||'買')}</td>
+        <td style="color:${typeColor(r.type||'買')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
         <td>${r.usdtAmt!=null?fmt(r.usdtAmt,2)+' USDT':'<span style="color:var(--text-secondary)">—</span>'}</td>
         <td>${r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'}</td>
         <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
