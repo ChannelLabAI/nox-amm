@@ -323,8 +323,8 @@
         <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
         <td>${typeBadge(r.type||'買')}</td>
         <td style="color:${typeColor(r.type||'買')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
-        <td>${r.usdtAmt!=null?fmt(r.usdtAmt,2)+' USDT':'<span style="color:var(--text-secondary)">—</span>'}</td>
-        <td>${r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'}</td>
+        <td>${(r.type==='買'||r.type==='賣')?(r.usdtAmt!=null?fmt(r.usdtAmt,2)+' USDT':'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
+        <td>${(r.type==='買'||r.type==='賣')?(r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
         <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
