@@ -70,6 +70,8 @@
   .badge-stake  { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(139,92,246,0.12);  color:var(--purple); font-size:11px; font-weight:700; letter-spacing:1px; }
   .badge-unstake{ display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(212,168,66,0.12);  color:var(--gold);   font-size:11px; font-weight:700; letter-spacing:1px; }
   .badge-reward { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(6,182,212,0.12);   color:#06B6D4;       font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-in     { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.08);   color:#86EFAC;       font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-out    { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(148,163,184,0.10); color:#94A3B8;       font-size:11px; font-weight:700; letter-spacing:1px; }
 
   .tx-link { color:var(--gold); text-decoration:none; font-size:11px; padding:3px 9px; border:1px solid rgba(212,168,66,0.3); border-radius:4px; transition:all 0.2s; white-space:nowrap; }
   .tx-link:hover { background:rgba(212,168,66,0.1); border-color:var(--gold); }
@@ -202,17 +204,17 @@
     if(from===POOL_CA || to===POOL_CA) return row.isBuy ? '買' : '賣';
     if(STAKING_ADDRS.has(to))   return '質押';
     if(STAKING_ADDRS.has(from)) return row.noxAmt < 100 ? '質押收益' : '解質押';
-    return row.isBuy ? '買' : '賣';
+    return row.isBuy ? '轉入' : '轉出';
   }
 
   function typeBadge(type) {
-    const map = {'買':'badge-buy','賣':'badge-sell','質押':'badge-stake','解質押':'badge-unstake','質押收益':'badge-reward'};
-    return `<span class="${map[type]||'badge-buy'}">${type}</span>`;
+    const map = {'買':'badge-buy','賣':'badge-sell','質押':'badge-stake','解質押':'badge-unstake','質押收益':'badge-reward','轉入':'badge-in','轉出':'badge-out'};
+    return `<span class="${map[type]||'badge-out'}">${type}</span>`;
   }
 
   function typeColor(type) {
-    return type==='買'||type==='解質押'||type==='質押收益' ? 'var(--green)'
-         : type==='賣'||type==='質押' ? 'var(--red)'
+    return type==='買'||type==='解質押'||type==='質押收益'||type==='轉入' ? 'var(--green)'
+         : type==='賣'||type==='質押'||type==='轉出' ? 'var(--red)'
          : 'var(--text-primary)';
   }
 
@@ -326,7 +328,7 @@
       <tbody>${rows.map(r=>`<tr>
         <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
         <td>${typeBadge(r.type||'買')}</td>
-        <td style="color:${typeColor(r.type||'買')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
+        <td style="color:${typeColor(r.type||'轉入')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益'||r.type==='轉入')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
         <td>${(r.type==='買'||r.type==='賣')?(r.usdtAmt!=null?`<span style="color:${r.type==='買'?'var(--green)':'var(--red)'};font-weight:600">${fmt(r.usdtAmt,2)} USDT</span>`:'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
         <td>${(r.type==='買'||r.type==='賣')?(r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
         <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
