@@ -401,11 +401,26 @@
       else if(addrFlow[other]!==flow) addrFlow[other]='both';
     }
 
-    return Object.entries(addrCount)
+    const candidates = Object.entries(addrCount)
       .filter(([,c])=>c<100)
       .sort((a,b)=>b[1]-a[1])
+      .slice(0,12)
+      .map(([addr])=>addr);
+
+    // Filter out contracts — only keep EOA wallets
+    const isEOA = await Promise.all(candidates.map(async addr => {
+      try {
+        const r = await fetch(`${BS}/addresses/${addr}`);
+        if(!r.ok) return true; // keep if can't verify
+        const j = await r.json();
+        return !j.is_contract;
+      } catch(e) { return true; }
+    }));
+
+    return candidates
+      .filter((_,i)=>isEOA[i])
       .slice(0,8)
-      .map(([addr])=>({addr, flow:addrFlow[addr]}));
+      .map(addr=>({addr, flow:addrFlow[addr]}));
   }
 
   function drillInto(addr) {
