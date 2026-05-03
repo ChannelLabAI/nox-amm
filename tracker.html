@@ -224,10 +224,11 @@
   function processNoxData(wallet, noxItems, usdtItems) {
     const w = wallet.toLowerCase();
 
-    // Build USDT lookup by tx hash
+    // Build USDT lookup by transaction_hash
     const usdtMap = {};
     for(const item of usdtItems) {
-      const h = item.tx_hash;
+      const h = item.transaction_hash;
+      if(!h) continue;
       if(!usdtMap[h]) usdtMap[h]=[];
       usdtMap[h].push(item);
     }
@@ -235,14 +236,14 @@
     let totalBuyNox=0,totalBuyUsdt=0,buyCount=0;
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
 
-    const rows = noxItems.map(item => {
+    const rows = noxItems.filter(item=>item.transaction_hash).map(item => {
       const isBuy  = item.to?.hash?.toLowerCase()===w;
       const dec    = parseInt(item.total?.decimals||'18');
       const noxAmt = parseInt(item.total?.value||'0') / Math.pow(10,dec);
 
       // Find USDT in same tx
       let usdtAmt = null;
-      for(const ut of usdtMap[item.tx_hash]||[]) {
+      for(const ut of usdtMap[item.transaction_hash]||[]) {
         const ud = parseInt(ut.total?.decimals||'6');
         const v  = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
         if(v>0){ usdtAmt=v; break; }
@@ -253,7 +254,7 @@
       if(isBuy)  { buyCount++;  totalBuyNox+=noxAmt;  totalBuyUsdt+=usdtAmt||0; }
       else        { sellCount++; totalSellNox+=noxAmt; totalSellUsdt+=usdtAmt||0; }
 
-      return { hash:item.tx_hash, ts:item.timestamp, isBuy, noxAmt, usdtAmt, price };
+      return { hash:item.transaction_hash, ts:item.timestamp, isBuy, noxAmt, usdtAmt, price };
     });
 
     return {
