@@ -140,7 +140,7 @@
       <div class="stat-card"><div class="stat-label">均買價</div><div class="stat-value" id="s-avg-buy">—</div><div class="stat-sub">USDT/NOX</div></div>
       <div class="stat-card"><div class="stat-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub">USDT/NOX</div></div>
       <div class="stat-card"><div class="stat-label">質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub">NOX</div></div>
-      <div class="stat-card" style="border-color:rgba(139,92,246,0.3)"><div class="stat-label">質押率</div><div class="stat-value" style="color:var(--purple)" id="s-stake-rate">—</div><div class="stat-sub">質押 ÷ (買-賣)</div></div>
+      <div class="stat-card" style="border-color:rgba(139,92,246,0.3)"><div class="stat-label">質押率</div><div class="stat-value" style="color:var(--purple)" id="s-stake-rate">—</div><div class="stat-sub">質押 ÷ 買入</div></div>
     </div>
   </div>
 
@@ -319,7 +319,7 @@
       if(row.type==='質押') totalStakeNox+=row.noxAmt;
     }
     const netNox = totalBuyNox - totalSellNox;
-    const stakeRate = netNox>0 && totalStakeNox>0 ? totalStakeNox/netNox : null;
+    const stakeRate = totalBuyNox>0 && totalStakeNox>0 ? totalStakeNox/totalBuyNox : null;
 
     return {
       rows, buyCount, sellCount,
