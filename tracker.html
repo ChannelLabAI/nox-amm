@@ -8,318 +8,141 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
   :root {
-    --gold: #D4A842;
-    --gold-light: #F0D68A;
-    --gold-dark: #A67C2E;
-    --green: #22C55E;
-    --green-glow: rgba(34, 197, 94, 0.15);
+    --gold: #D4A842; --gold-light: #F0D68A; --gold-dark: #A67C2E;
+    --green: #22C55E; --green-glow: rgba(34,197,94,0.15);
     --red: #EF4444;
-    --bg-dark: #0A0A0F;
-    --bg-card: #12121A;
-    --bg-input: #0E0E16;
-    --text-primary: #EEEEF0;
-    --text-secondary: #9999AA;
+    --bg-dark: #0A0A0F; --bg-card: #12121A; --bg-input: #0E0E16;
+    --text-primary: #EEEEF0; --text-secondary: #9999AA;
     --purple: #8B5CF6;
-    --border: rgba(212, 168, 66, 0.15);
-    --border-focus: rgba(212, 168, 66, 0.4);
+    --border: rgba(212,168,66,0.15); --border-focus: rgba(212,168,66,0.4);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
     font-family: 'Noto Sans TC', -apple-system, sans-serif;
-    background: var(--bg-dark);
-    color: var(--text-primary);
-    line-height: 1.7;
-    overflow-x: hidden;
-    min-height: 100vh;
+    background: var(--bg-dark); color: var(--text-primary);
+    line-height: 1.7; overflow-x: hidden; min-height: 100vh;
   }
 
   body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    content:''; position:fixed; top:0;left:0;right:0;bottom:0;
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 50%, rgba(212, 168, 66, 0.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 50%, rgba(212,168,66,0.05) 0%, transparent 50%);
+    pointer-events:none; z-index:0;
   }
 
-  .container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px;
-    position: relative;
-    z-index: 1;
-  }
+  .container { max-width:1100px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
 
-  .hero {
-    text-align: center;
-    padding: 60px 0 40px;
-  }
-
+  .hero { text-align:center; padding:56px 0 36px; }
   .hero-badge {
-    display: inline-block;
-    padding: 5px 16px;
-    border: 1px solid var(--purple);
-    border-radius: 50px;
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: var(--purple);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    background: rgba(139, 92, 246, 0.1);
+    display:inline-block; padding:5px 16px;
+    border:1px solid var(--purple); border-radius:50px;
+    font-size:12px; letter-spacing:2px; color:var(--purple);
+    text-transform:uppercase; margin-bottom:18px;
+    background:rgba(139,92,246,0.1);
   }
-
   .hero h1 {
-    font-size: clamp(24px, 4vw, 38px);
-    font-weight: 900;
-    line-height: 1.2;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size:clamp(22px,4vw,36px); font-weight:900; line-height:1.2; margin-bottom:10px;
+    background:linear-gradient(135deg,var(--gold-light) 0%,var(--gold) 50%,var(--gold-dark) 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   }
+  .hero-sub { font-size:13px; color:var(--text-secondary); }
 
-  .hero-sub {
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-
-  /* Search bar */
-  .search-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px;
-    margin-bottom: 32px;
-  }
-
-  .search-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
+  /* Search */
+  .search-section { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:28px; }
+  .search-row { display:flex; gap:12px; align-items:center; }
   .search-input {
-    flex: 1;
-    padding: 14px 20px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
+    flex:1; padding:14px 20px; background:var(--bg-input); border:1px solid var(--border); border-radius:12px;
+    color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; transition:border-color 0.2s;
   }
-
-  .search-input:focus { border-color: var(--border-focus); }
-  .search-input::placeholder { color: var(--text-secondary); font-size: 13px; }
-
+  .search-input:focus { border-color:var(--border-focus); }
+  .search-input::placeholder { color:var(--text-secondary); }
   .search-btn {
-    padding: 14px 28px;
-    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
-    border: none;
-    border-radius: 12px;
-    color: #0A0A0F;
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    white-space: nowrap;
+    padding:14px 28px; background:linear-gradient(135deg,var(--gold-dark),var(--gold)); border:none; border-radius:12px;
+    color:#0A0A0F; font-family:'Noto Sans TC',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:opacity 0.2s; white-space:nowrap;
   }
+  .search-btn:hover { opacity:0.9; } .search-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
-  .search-btn:hover { opacity: 0.9; }
-  .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* Stats */
+  .stats-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+  .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center; }
+  .stat-label { font-size:11px; color:var(--text-secondary); letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .stat-value { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:700; }
+  .stat-sub { font-size:11px; color:var(--text-secondary); margin-top:3px; }
 
-  /* Summary stats */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-
-  .stat-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px;
-    text-align: center;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    color: var(--text-secondary);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .stat-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 17px;
-    font-weight: 700;
-  }
-
-  .stat-sub {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 3px;
-  }
-
-  /* Table */
-  .table-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 32px;
-    margin-bottom: 40px;
-    overflow-x: auto;
-  }
-
-  .table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .table-header h2 { font-size: 18px; font-weight: 700; }
+  /* Section card */
+  .section-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:24px; overflow-x:auto; }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:8px; }
+  .section-header h2 { font-size:17px; font-weight:700; }
 
   .count-badge {
-    padding: 4px 12px;
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 50px;
-    font-size: 12px;
-    color: var(--purple);
-    font-family: 'JetBrains Mono', monospace;
+    padding:3px 12px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3);
+    border-radius:50px; font-size:12px; color:var(--purple); font-family:'JetBrains Mono',monospace;
   }
 
-  .tx-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 700px;
+  /* Tables */
+  .tx-table { width:100%; border-collapse:collapse; min-width:680px; }
+  .tx-table th { text-align:left; padding:9px 13px; font-size:11px; color:var(--text-secondary); letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+  .tx-table td { padding:12px 13px; font-family:'JetBrains Mono',monospace; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+  .tx-table tr:hover td { background:rgba(212,168,66,0.03); }
+  .tx-table tr:last-child td { border-bottom:none; }
+
+  .badge-buy { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.12); color:var(--green); font-size:11px; font-weight:700; letter-spacing:1px; }
+  .badge-sell { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(239,68,68,0.12); color:var(--red); font-size:11px; font-weight:700; letter-spacing:1px; }
+
+  .tx-link { color:var(--gold); text-decoration:none; font-size:11px; padding:3px 9px; border:1px solid rgba(212,168,66,0.3); border-radius:4px; transition:all 0.2s; white-space:nowrap; }
+  .tx-link:hover { background:rgba(212,168,66,0.1); border-color:var(--gold); }
+
+  /* Related wallets */
+  .related-list { display:flex; flex-direction:column; gap:12px; }
+
+  .related-card {
+    background:var(--bg-input); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; transition:border-color 0.2s;
+  }
+  .related-card:hover { border-color:rgba(212,168,66,0.3); }
+
+  .related-header {
+    display:flex; align-items:center; gap:12px; padding:14px 18px; cursor:pointer;
+    user-select:none;
   }
 
-  .tx-table th {
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
+  .flow-badge {
+    font-size:11px; padding:3px 10px; border-radius:4px; font-weight:700; letter-spacing:1px; white-space:nowrap;
   }
+  .flow-in  { background:rgba(34,197,94,0.12);  color:var(--green); }
+  .flow-out { background:rgba(239,68,68,0.12);   color:var(--red); }
+  .flow-both{ background:rgba(212,168,66,0.12);  color:var(--gold); }
 
-  .tx-table td {
-    padding: 13px 14px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    vertical-align: middle;
-  }
+  .related-addr { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-primary); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .related-summary { font-size:12px; color:var(--text-secondary); white-space:nowrap; }
+  .related-expand { font-size:11px; color:var(--text-secondary); margin-left:8px; }
 
-  .tx-table tr:hover td { background: rgba(212, 168, 66, 0.03); }
-  .tx-table tr:last-child td { border-bottom: none; }
-
-  .badge-buy {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 4px;
-    background: rgba(34, 197, 94, 0.12);
-    color: var(--green);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-
-  .badge-sell {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 4px;
-    background: rgba(239, 68, 68, 0.12);
-    color: var(--red);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-
-  .tx-link {
-    color: var(--gold);
-    text-decoration: none;
-    font-size: 11px;
-    padding: 4px 10px;
-    border: 1px solid rgba(212, 168, 66, 0.3);
-    border-radius: 4px;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .tx-link:hover {
-    background: rgba(212, 168, 66, 0.1);
-    border-color: var(--gold);
-  }
+  .related-body { display:none; padding:0 18px 14px; overflow-x:auto; }
+  .related-body.open { display:block; }
+  .related-body .tx-table { min-width:600px; }
 
   /* States */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-  }
+  .empty-state,.loading-state,.error-state { text-align:center; padding:50px 20px; }
+  .empty-state,.loading-state { color:var(--text-secondary); }
+  .error-state { color:var(--red); }
+  .empty-state .icon { font-size:40px; margin-bottom:14px; }
+  .spinner { display:inline-block; width:28px; height:28px; border:3px solid rgba(212,168,66,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:14px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 
-  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
-  .empty-state p { font-size: 15px; }
+  .progress-msg { font-size:13px; color:var(--text-secondary); margin-top:8px; }
 
-  .loading-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-secondary);
-  }
+  .up { color:var(--green); } .down { color:var(--red); } .gold { color:var(--gold); }
 
-  .spinner {
-    display: inline-block;
-    width: 32px;
-    height: 32px;
-    border: 3px solid rgba(212, 168, 66, 0.2);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 16px;
-  }
+  .footer { text-align:center; padding:36px 0; border-top:1px solid var(--border); }
+  .footer p { color:var(--text-secondary); font-size:12px; }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .error-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--red);
-    background: rgba(239, 68, 68, 0.05);
-    border-radius: 12px;
-  }
-
-  .up { color: var(--green); }
-  .down { color: var(--red); }
-  .gold { color: var(--gold); }
-
-  .footer {
-    text-align: center;
-    padding: 40px 0;
-    border-top: 1px solid var(--border);
-  }
-  .footer p { color: var(--text-secondary); font-size: 12px; }
-
-  @media (max-width: 768px) {
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .search-row { flex-direction: column; }
-    .search-btn { width: 100%; }
+  @media (max-width:768px) {
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .search-row { flex-direction:column; }
+    .search-btn { width:100%; }
   }
 </style>
 </head>
@@ -329,18 +152,17 @@
   <section class="hero">
     <div class="hero-badge">Wallet Tracker</div>
     <h1>NOX 持倉追蹤器</h1>
-    <p class="hero-sub">查詢任意地址在 Arbitrum 上的 NOX 買賣紀錄</p>
+    <p class="hero-sub">查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包</p>
   </section>
 
   <div class="search-section">
     <div class="search-row">
-      <input class="search-input" id="wallet-input" type="text"
-        placeholder="輸入錢包地址，例如 0xABCD...1234"
-        oninput="this.value = this.value.trim()">
+      <input class="search-input" id="wallet-input" type="text" placeholder="輸入錢包地址，例如 0xABCD...1234">
       <button class="search-btn" id="search-btn" onclick="search()">查詢</button>
     </div>
   </div>
 
+  <!-- Main wallet stats -->
   <div id="stats-section" style="display:none">
     <div class="stats-grid">
       <div class="stat-card">
@@ -371,9 +193,10 @@
     </div>
   </div>
 
-  <div class="table-section">
-    <div class="table-header">
-      <h2>交易紀錄</h2>
+  <!-- Main tx table -->
+  <div class="section-card" id="main-table-card">
+    <div class="section-header">
+      <h2 id="main-table-title">交易紀錄</h2>
       <span class="count-badge" id="tx-count" style="display:none"></span>
     </div>
     <div id="table-body">
@@ -382,6 +205,16 @@
         <p>輸入錢包地址查詢 NOX 交易紀錄</p>
       </div>
     </div>
+  </div>
+
+  <!-- Related wallets -->
+  <div class="section-card" id="related-card" style="display:none">
+    <div class="section-header">
+      <h2>關聯錢包</h2>
+      <span class="count-badge" id="related-count"></span>
+    </div>
+    <div id="related-progress" class="progress-msg" style="display:none"></div>
+    <div class="related-list" id="related-list"></div>
   </div>
 
   <footer class="footer">
@@ -395,173 +228,237 @@
   const USDT_CA = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
   const API     = 'https://api.arbiscan.io/api';
 
-  function fmt(n, d = 0) {
-    if (n == null) return '—';
-    return d === 0
-      ? Math.round(n).toLocaleString('en-US')
-      : n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  // Known Arbitrum contract addresses to filter out
+  const KNOWN_CONTRACTS = new Set([
+    '0x0000000000000000000000000000000000000000',
+    '0x4c60051384bd2d3c01bfc845cf5f4b44bcbe9de5', // uniswap v2 router
+    '0x1b02da8cb0d097eb8d57a175b88c7d8b47997506', // sushiswap router
+    '0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45', // uniswap v3 router
+    '0xe592427a0aece92de3edee1f18e0157c05861564', // uniswap v3 router v1
+    '0xd3211dcd145990f740f8607fb0364080d718e3e3', // nox/usdt pool
+  ]);
+
+  function fmt(n, d=0) {
+    if (n==null) return '—';
+    return d===0 ? Math.round(n).toLocaleString('en-US')
+      : n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
   }
 
   function fmtTime(ts) {
-    const d = new Date(ts * 1000);
-    return d.toLocaleString('zh-TW', {
-      timeZone: 'Asia/Taipei',
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: false
+    return new Date(ts*1000).toLocaleString('zh-TW',{
+      timeZone:'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
     });
   }
 
-  async function fetchTokenTxs(contract, address) {
-    const url = `${API}?module=account&action=tokentx&contractaddress=${contract}&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=`;
-    const r = await fetch(url);
+  function shortAddr(addr) { return addr.slice(0,6)+'…'+addr.slice(-4); }
+
+  async function apiFetch(params) {
+    const qs = Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
+    const r = await fetch(`${API}?${qs}&apikey=`);
     const j = await r.json();
-    if (j.status !== '1') return [];
-    return j.result;
+    return j.status==='1' ? (j.result||[]) : [];
+  }
+
+  function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+  async function fetchNoxData(wallet) {
+    const [noxTxs, usdtTxs] = await Promise.all([
+      apiFetch({module:'account',action:'tokentx',contractaddress:NOX_CA,address:wallet,sort:'desc'}),
+      apiFetch({module:'account',action:'tokentx',contractaddress:USDT_CA,address:wallet,sort:'desc'}),
+    ]);
+
+    const usdtMap = {};
+    for (const tx of usdtTxs) {
+      if (!usdtMap[tx.hash]) usdtMap[tx.hash]=[];
+      usdtMap[tx.hash].push(tx);
+    }
+
+    let totalBuyNox=0, totalBuyUsdt=0, buyCount=0;
+    let totalSellNox=0, totalSellUsdt=0, sellCount=0;
+
+    const rows = noxTxs.map(tx => {
+      const isBuy = tx.to.toLowerCase()===wallet.toLowerCase();
+      const noxAmt = parseInt(tx.value)/1e18;
+      let usdtAmt = null;
+      for (const utx of usdtMap[tx.hash]||[]) {
+        const v = parseInt(utx.value)/1e6;
+        if (v>0) { usdtAmt=v; break; }
+      }
+      const price = (usdtAmt&&noxAmt) ? usdtAmt/noxAmt : null;
+      if (isBuy) { buyCount++; totalBuyNox+=noxAmt; totalBuyUsdt+=usdtAmt||0; }
+      else       { sellCount++; totalSellNox+=noxAmt; totalSellUsdt+=usdtAmt||0; }
+      return {hash:tx.hash,ts:tx.timeStamp,isBuy,noxAmt,usdtAmt,price};
+    });
+
+    return {
+      rows, buyCount, sellCount,
+      totalBuyNox, totalBuyUsdt, totalSellNox, totalSellUsdt,
+      avgBuy:  buyCount&&totalBuyUsdt  ? totalBuyUsdt/totalBuyNox   : null,
+      avgSell: sellCount&&totalSellUsdt? totalSellUsdt/totalSellNox : null,
+      netNox: totalBuyNox-totalSellNox,
+      netUsdt: totalSellUsdt-totalBuyUsdt,
+    };
+  }
+
+  function buildTxTable(rows) {
+    if (!rows.length) return '<div class="empty-state"><div class="icon">📭</div><p>沒有 NOX 交易紀錄</p></div>';
+    return `<table class="tx-table">
+      <thead><tr>
+        <th>時間 (UTC+8)</th><th>類型</th><th>NOX 數量</th><th>USDT 金額</th><th>單價</th><th>查看</th>
+      </tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
+        <td><span class="${r.isBuy?'badge-buy':'badge-sell'}">${r.isBuy?'BUY':'SELL'}</span></td>
+        <td style="color:${r.isBuy?'var(--green)':'var(--red)'};font-weight:700">${r.isBuy?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
+        <td>${r.usdtAmt!=null?fmt(r.usdtAmt,2)+' USDT':'<span style="color:var(--text-secondary)">—</span>'}</td>
+        <td>${r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'}</td>
+        <td><a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  async function findRelatedWallets(mainWallet) {
+    const txns = await apiFetch({module:'account',action:'txlist',address:mainWallet,sort:'desc'});
+    const addrCount = {}, addrFlow = {};
+
+    for (const tx of txns) {
+      const isOut = tx.from.toLowerCase()===mainWallet.toLowerCase();
+      const other = isOut ? tx.to.toLowerCase() : tx.from.toLowerCase();
+      if (!other || KNOWN_CONTRACTS.has(other)) continue;
+      const flow = isOut ? 'out' : 'in';
+      addrCount[other] = (addrCount[other]||0)+1;
+      if (!addrFlow[other]) addrFlow[other]=flow;
+      else if (addrFlow[other]!==flow) addrFlow[other]='both';
+    }
+
+    // Filter out high-frequency addresses (likely contracts/services), take top 8
+    return Object.entries(addrCount)
+      .filter(([,c]) => c<100)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,8)
+      .map(([addr]) => ({addr, flow:addrFlow[addr]}));
+  }
+
+  function toggleRelated(id) {
+    const body = document.getElementById('rb-'+id);
+    const arrow = document.getElementById('arrow-'+id);
+    if (body.classList.contains('open')) {
+      body.classList.remove('open'); arrow.textContent='▶';
+    } else {
+      body.classList.add('open'); arrow.textContent='▼';
+    }
   }
 
   async function search() {
     const wallet = document.getElementById('wallet-input').value.trim().toLowerCase();
-    if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
-      alert('請輸入有效的錢包地址（0x 開頭，42 位）');
-      return;
+    if (!wallet||!wallet.startsWith('0x')||wallet.length!==42) {
+      alert('請輸入有效的錢包地址'); return;
     }
 
     const btn = document.getElementById('search-btn');
-    btn.disabled = true;
-    btn.textContent = '查詢中…';
-    document.getElementById('stats-section').style.display = 'none';
-    document.getElementById('tx-count').style.display = 'none';
-    document.getElementById('table-body').innerHTML = `
-      <div class="loading-state">
-        <div><div class="spinner"></div></div>
-        <p>正在從 Arbiscan 拉取資料…</p>
-      </div>`;
+    btn.disabled=true; btn.textContent='查詢中…';
+    document.getElementById('stats-section').style.display='none';
+    document.getElementById('related-card').style.display='none';
+    document.getElementById('tx-count').style.display='none';
+    document.getElementById('main-table-title').textContent='交易紀錄';
+    document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
 
     try {
-      const [noxTxs, usdtTxs] = await Promise.all([
-        fetchTokenTxs(NOX_CA, wallet),
-        fetchTokenTxs(USDT_CA, wallet),
-      ]);
+      // --- Main wallet ---
+      const d = await fetchNoxData(wallet);
 
-      // Group USDT by txhash
-      const usdtMap = {};
-      for (const tx of usdtTxs) {
-        if (!usdtMap[tx.hash]) usdtMap[tx.hash] = [];
-        usdtMap[tx.hash].push(tx);
+      document.getElementById('main-table-title').textContent=`${shortAddr(wallet)} 交易紀錄`;
+
+      if (!d.rows.length) {
+        document.getElementById('table-body').innerHTML='<div class="empty-state"><div class="icon">📭</div><p>此地址沒有 NOX 交易紀錄</p></div>';
+      } else {
+        const countEl=document.getElementById('tx-count');
+        countEl.textContent=d.rows.length+' 筆';
+        countEl.style.display='inline-block';
+
+        document.getElementById('s-buy-count').textContent=d.buyCount;
+        document.getElementById('s-buy-usdt').textContent=fmt(d.totalBuyUsdt,2)+' USDT';
+        document.getElementById('s-sell-count').textContent=d.sellCount;
+        document.getElementById('s-sell-usdt').textContent=fmt(d.totalSellUsdt,2)+' USDT';
+        document.getElementById('s-net-nox').textContent=fmt(d.netNox,0)+' NOX';
+        document.getElementById('s-net-usdt').textContent=(d.netUsdt>=0?'+':'')+fmt(d.netUsdt,2)+' USDT';
+        document.getElementById('s-avg-buy').textContent=d.avgBuy?fmt(d.avgBuy,4):'—';
+        document.getElementById('s-avg-sell').textContent=d.avgSell?fmt(d.avgSell,4):'—';
+        document.getElementById('stats-section').style.display='block';
+        document.getElementById('table-body').innerHTML=buildTxTable(d.rows);
       }
 
-      if (!noxTxs.length) {
-        document.getElementById('table-body').innerHTML = `
-          <div class="empty-state">
-            <div class="icon">📭</div>
-            <p>此地址沒有 NOX 交易紀錄</p>
+      // --- Related wallets ---
+      document.getElementById('related-card').style.display='block';
+      document.getElementById('related-list').innerHTML='';
+      document.getElementById('related-count').textContent='掃描中…';
+      const progressEl=document.getElementById('related-progress');
+      progressEl.style.display='block';
+      progressEl.textContent='正在掃描關聯錢包 ETH 轉帳紀錄…';
+
+      const related = await findRelatedWallets(wallet);
+
+      if (!related.length) {
+        document.getElementById('related-count').textContent='無';
+        progressEl.style.display='none';
+        document.getElementById('related-list').innerHTML='<div class="empty-state" style="padding:30px"><p>未發現關聯錢包</p></div>';
+        btn.disabled=false; btn.textContent='查詢'; return;
+      }
+
+      document.getElementById('related-count').textContent=`${related.length} 個`;
+      const listEl=document.getElementById('related-list');
+
+      for (let i=0; i<related.length; i++) {
+        const {addr,flow} = related[i];
+        progressEl.textContent=`查詢關聯錢包 ${i+1}/${related.length}：${shortAddr(addr)}…`;
+
+        // Placeholder card
+        const cardId = 'rc'+i;
+        const flowLabel = flow==='in'?'⬇ 匯入':'out'?'⬆ 匯出':'↕ 雙向';
+        const flowCls   = flow==='in'?'flow-in':flow==='out'?'flow-out':'flow-both';
+        const placeholder = document.createElement('div');
+        placeholder.className='related-card';
+        placeholder.id='card-'+cardId;
+        placeholder.innerHTML=`
+          <div class="related-header" onclick="toggleRelated('${cardId}')">
+            <span class="flow-badge ${flowCls}">${flow==='in'?'⬇ 匯入':flow==='out'?'⬆ 匯出':'↕ 雙向'}</span>
+            <span class="related-addr">${addr}</span>
+            <span class="related-summary">查詢中…</span>
+            <span class="related-expand" id="arrow-${cardId}">▶</span>
+          </div>
+          <div class="related-body" id="rb-${cardId}">
+            <div class="loading-state" style="padding:20px"><div class="spinner"></div></div>
           </div>`;
-        btn.disabled = false;
-        btn.textContent = '查詢';
-        return;
+        listEl.appendChild(placeholder);
+
+        // Fetch this wallet's NOX data
+        await sleep(600); // rate limit buffer
+        try {
+          const rd = await fetchNoxData(addr);
+          const summaryParts = [];
+          if (rd.buyCount)  summaryParts.push(`買 ${rd.buyCount} 筆`);
+          if (rd.sellCount) summaryParts.push(`賣 ${rd.sellCount} 筆`);
+          if (!rd.rows.length) summaryParts.push('無 NOX 紀錄');
+
+          placeholder.querySelector('.related-summary').textContent = summaryParts.join(' · ');
+          placeholder.querySelector('.related-body').innerHTML = buildTxTable(rd.rows);
+        } catch(e) {
+          placeholder.querySelector('.related-summary').textContent='查詢失敗';
+          placeholder.querySelector('.related-body').innerHTML=`<div class="error-state" style="padding:16px"><p>⚠️ ${e.message}</p></div>`;
+        }
       }
 
-      // Build rows
-      let totalBuyNox = 0, totalBuyUsdt = 0, buyCount = 0;
-      let totalSellNox = 0, totalSellUsdt = 0, sellCount = 0;
-
-      const rows = noxTxs.map(tx => {
-        const isBuy = tx.to.toLowerCase() === wallet;
-        const noxAmt = parseInt(tx.value) / 1e18;
-
-        // Find USDT counterpart in same tx
-        let usdtAmt = null;
-        const usdtGroup = usdtMap[tx.hash] || [];
-        for (const utx of usdtGroup) {
-          const v = parseInt(utx.value) / 1e6;
-          if (v > 0) { usdtAmt = v; break; }
-        }
-
-        const price = (usdtAmt && noxAmt) ? usdtAmt / noxAmt : null;
-
-        if (isBuy) {
-          buyCount++;
-          totalBuyNox  += noxAmt;
-          totalBuyUsdt += usdtAmt || 0;
-        } else {
-          sellCount++;
-          totalSellNox  += noxAmt;
-          totalSellUsdt += usdtAmt || 0;
-        }
-
-        return { hash: tx.hash, ts: tx.timeStamp, isBuy, noxAmt, usdtAmt, price };
-      });
-
-      // Stats
-      const netNox = totalBuyNox - totalSellNox;
-      const netUsdt = totalSellUsdt - totalBuyUsdt;
-      const avgBuy  = buyCount  && totalBuyUsdt  ? totalBuyUsdt  / totalBuyNox  : null;
-      const avgSell = sellCount && totalSellUsdt ? totalSellUsdt / totalSellNox : null;
-
-      document.getElementById('s-buy-count').textContent  = buyCount;
-      document.getElementById('s-buy-usdt').textContent   = fmt(totalBuyUsdt, 2) + ' USDT';
-      document.getElementById('s-sell-count').textContent = sellCount;
-      document.getElementById('s-sell-usdt').textContent  = fmt(totalSellUsdt, 2) + ' USDT';
-      document.getElementById('s-net-nox').textContent    = fmt(netNox, 0) + ' NOX';
-      document.getElementById('s-net-usdt').textContent   = (netUsdt >= 0 ? '+' : '') + fmt(netUsdt, 2) + ' USDT';
-      document.getElementById('s-avg-buy').textContent    = avgBuy  ? fmt(avgBuy, 4)  : '—';
-      document.getElementById('s-avg-sell').textContent   = avgSell ? fmt(avgSell, 4) : '—';
-      document.getElementById('stats-section').style.display = 'block';
-
-      // Table
-      const countEl = document.getElementById('tx-count');
-      countEl.textContent = rows.length + ' 筆';
-      countEl.style.display = 'inline-block';
-
-      const rowsHtml = rows.map(r => `
-        <tr>
-          <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
-          <td><span class="${r.isBuy ? 'badge-buy' : 'badge-sell'}">${r.isBuy ? 'BUY' : 'SELL'}</span></td>
-          <td style="color:${r.isBuy ? 'var(--green)' : 'var(--red)'};font-weight:700">
-            ${r.isBuy ? '+' : '-'}${fmt(r.noxAmt, 2)} NOX
-          </td>
-          <td>${r.usdtAmt != null ? fmt(r.usdtAmt, 2) + ' USDT' : '<span style="color:var(--text-secondary)">—</span>'}</td>
-          <td>${r.price != null ? fmt(r.price, 4) + ' U' : '<span style="color:var(--text-secondary)">—</span>'}</td>
-          <td>
-            <a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">
-              ${r.hash.slice(0,8)}… ↗
-            </a>
-          </td>
-        </tr>`).join('');
-
-      document.getElementById('table-body').innerHTML = `
-        <table class="tx-table">
-          <thead>
-            <tr>
-              <th>時間 (UTC+8)</th>
-              <th>類型</th>
-              <th>NOX 數量</th>
-              <th>USDT 金額</th>
-              <th>單價</th>
-              <th>查看</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>`;
-
-    } catch (e) {
-      document.getElementById('table-body').innerHTML = `
-        <div class="error-state">
-          <p>⚠️ 查詢失敗：${e.message}</p>
-          <p style="font-size:13px;margin-top:8px;color:var(--text-secondary)">請稍後再試，或確認地址格式正確</p>
-        </div>`;
+      progressEl.style.display='none';
+    } catch(e) {
+      document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ 查詢失敗：${e.message}</p></div>`;
     }
 
-    btn.disabled = false;
-    btn.textContent = '查詢';
+    btn.disabled=false; btn.textContent='查詢';
   }
 
-  // Enter key support
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('wallet-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') search();
-    });
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('wallet-input').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
   });
 </script>
 </body>
