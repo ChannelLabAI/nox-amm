@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOX 持倉追蹤器</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -108,6 +109,9 @@
 
   .up { color:var(--green); } .down { color:var(--red); } .gold { color:var(--gold); }
 
+  #graph-section { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:24px; }
+  #wallet-graph { height:380px; border-radius:12px; overflow:hidden; background:var(--bg-dark); }
+
   .footer { text-align:center; padding:36px 0; border-top:1px solid var(--border); }
   .footer p { color:var(--text-secondary); font-size:12px; }
 
@@ -164,6 +168,14 @@
     </div>
     <div id="related-progress" class="progress-msg" style="display:none"></div>
     <div class="related-list" id="related-list"></div>
+  </div>
+
+  <div id="graph-section" style="display:none">
+    <div class="section-header" style="margin-bottom:18px">
+      <h2>關係圖</h2>
+      <span style="font-size:12px;color:var(--text-secondary)">點擊節點可切換查詢</span>
+    </div>
+    <div id="wallet-graph"></div>
   </div>
 
   <footer class="footer">
@@ -423,6 +435,49 @@
       .map(addr=>({addr, flow:addrFlow[addr]}));
   }
 
+  let _visNetwork = null;
+
+  function buildGraph(mainWallet, related) {
+    const graphEl = document.getElementById('graph-section');
+    if(!related.length){ graphEl.style.display='none'; return; }
+    graphEl.style.display='block';
+
+    const mainShort = shortAddr(mainWallet);
+    const nodes = new vis.DataSet([
+      { id: mainWallet, label: mainShort, shape:'dot', size:28,
+        color:{ background:'#D4A842', border:'#F0D68A', highlight:{background:'#F0D68A',border:'#D4A842'} },
+        font:{ color:'#0A0A0F', size:13, bold:true } },
+      ...related.map(r => {
+        const bg = r.flow==='in'?'#22C55E': r.flow==='out'?'#EF4444':'#8B5CF6';
+        const bd = r.flow==='in'?'#86EFAC': r.flow==='out'?'#FCA5A5':'#C4B5FD';
+        return { id:r.addr, label:shortAddr(r.addr), shape:'dot', size:18,
+          color:{background:bg, border:bd, highlight:{background:bd,border:bg}},
+          font:{color:'#EEEEF0', size:12} };
+      })
+    ]);
+
+    const edgesArr = [];
+    for(const r of related) {
+      const opts = { color:{color:'rgba(212,168,66,0.5)',highlight:'#D4A842'}, width:2, label:'NOX', font:{color:'#9999AA',size:10,align:'middle'}, smooth:{type:'curvedCW',roundness:0.2} };
+      if(r.flow==='in'||r.flow==='both')  edgesArr.push({ from:r.addr, to:mainWallet, arrows:'to', ...opts });
+      if(r.flow==='out'||r.flow==='both') edgesArr.push({ from:mainWallet, to:r.addr, arrows:'to', ...opts });
+    }
+    const edges = new vis.DataSet(edgesArr);
+
+    const container = document.getElementById('wallet-graph');
+    if(_visNetwork) { _visNetwork.destroy(); }
+    _visNetwork = new vis.Network(container, {nodes, edges}, {
+      physics:{ stabilization:{iterations:120}, barnesHut:{gravitationalConstant:-3000,springLength:160} },
+      interaction:{ hover:true, tooltipDelay:200 },
+      layout:{ improvedLayout:true },
+      background:'#0A0A0F',
+    });
+
+    _visNetwork.on('click', params => {
+      if(params.nodes.length>0 && params.nodes[0]!==mainWallet) drillInto(params.nodes[0]);
+    });
+  }
+
   function drillInto(addr) {
     document.getElementById('wallet-input').value = addr;
     window.scrollTo({top:0, behavior:'smooth'});
@@ -444,6 +499,7 @@
     btn.disabled=true; btn.textContent='查詢中…';
     document.getElementById('stats-section').style.display='none';
     document.getElementById('related-card').style.display='none';
+    document.getElementById('graph-section').style.display='none';
     document.getElementById('tx-count').style.display='none';
     document.getElementById('main-table-title').textContent='交易紀錄';
     document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
@@ -530,6 +586,7 @@
       }
 
       progressEl.style.display='none';
+      buildGraph(wallet, related);
     } catch(e) {
       document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ 查詢失敗：${e.message}</p></div>`;
     }
