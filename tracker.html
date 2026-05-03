@@ -184,7 +184,7 @@
     });
   }
 
-  function shortAddr(addr) { return addr.slice(0,6)+'…'+addr.slice(-4); }
+  function shortAddr(addr) { return addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '—'; }
   function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
   // Fetch all pages of token transfers (up to maxPages)
@@ -241,12 +241,25 @@
       const dec    = parseInt(item.total?.decimals||'18');
       const noxAmt = parseInt(item.total?.value||'0') / Math.pow(10,dec);
 
-      // Find USDT in same tx
+      // Find USDT in same tx — direction-aware matching
       let usdtAmt = null;
-      for(const ut of usdtMap[item.transaction_hash]||[]) {
-        const ud = parseInt(ut.total?.decimals||'6');
-        const v  = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
-        if(v>0){ usdtAmt=v; break; }
+      const sameTxUsdt = usdtMap[item.transaction_hash]||[];
+      // First pass: direction-correct (BUY→wallet sends USDT; SELL→wallet receives USDT)
+      for(const ut of sameTxUsdt) {
+        const ud  = parseInt(ut.total?.decimals||'6');
+        const v   = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
+        if(v<=0) continue;
+        const uFrom = (ut.from?.hash||'').toLowerCase();
+        const uTo   = (ut.to?.hash||'').toLowerCase();
+        if(isBuy ? uFrom===w : uTo===w){ usdtAmt=v; break; }
+      }
+      // Fallback: any USDT in same tx
+      if(usdtAmt==null) {
+        for(const ut of sameTxUsdt) {
+          const ud = parseInt(ut.total?.decimals||'6');
+          const v  = parseInt(ut.total?.value||'0') / Math.pow(10,ud);
+          if(v>0){ usdtAmt=v; break; }
+        }
       }
 
       const price = (usdtAmt&&noxAmt) ? usdtAmt/noxAmt : null;
@@ -287,7 +300,7 @@
         <td style="color:${r.isBuy?'var(--green)':'var(--red)'};font-weight:700">${r.isBuy?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
         <td>${r.usdtAmt!=null?fmt(r.usdtAmt,2)+' USDT':'<span style="color:var(--text-secondary)">—</span>'}</td>
         <td>${r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'}</td>
-        <td><a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a></td>
+        <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   }
