@@ -73,6 +73,11 @@
   .badge-in     { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(34,197,94,0.08);   color:#86EFAC;       font-size:11px; font-weight:700; letter-spacing:1px; }
   .badge-out    { display:inline-block; padding:3px 10px; border-radius:4px; background:rgba(148,163,184,0.10); color:#94A3B8;       font-size:11px; font-weight:700; letter-spacing:1px; }
 
+  .filter-bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .filter-btn { padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--text-secondary); font-family:'Noto Sans TC',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; }
+  .filter-btn:hover { border-color:rgba(212,168,66,0.4); color:var(--text-primary); }
+  .filter-btn.active { background:rgba(212,168,66,0.12); border-color:var(--gold); color:var(--gold); font-weight:700; }
+
   .tx-link { color:var(--gold); text-decoration:none; font-size:11px; padding:3px 9px; border:1px solid rgba(212,168,66,0.3); border-radius:4px; transition:all 0.2s; white-space:nowrap; }
   .tx-link:hover { background:rgba(212,168,66,0.1); border-color:var(--gold); }
 
@@ -319,13 +324,14 @@
     };
   }
 
-  function buildTxTable(rows) {
+  function buildTxTable(rows, tableId='') {
     if(!rows.length) return '<div class="empty-state" style="padding:30px"><div class="icon" style="font-size:32px">📭</div><p>沒有 NOX 交易紀錄</p></div>';
-    return `<table class="tx-table">
+    const idAttr = tableId ? ` id="${tableId}"` : '';
+    return `<table class="tx-table"${idAttr}>
       <thead><tr>
         <th>時間 (UTC+8)</th><th>類型</th><th>NOX 數量</th><th>USDT 金額</th><th>單價</th><th>查看</th>
       </tr></thead>
-      <tbody>${rows.map(r=>`<tr>
+      <tbody>${rows.map(r=>`<tr data-type="${r.type||''}">
         <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
         <td>${typeBadge(r.type||'買')}</td>
         <td style="color:${typeColor(r.type||'轉入')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益'||r.type==='轉入')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
@@ -334,6 +340,22 @@
         <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
+  }
+
+  function buildFilterBar(rows) {
+    const types = ['全部', ...new Set(rows.map(r=>r.type).filter(Boolean))];
+    return `<div class="filter-bar" id="filter-bar">${types.map((t,i)=>
+      `<button class="filter-btn${i===0?' active':''}" onclick="filterTx('${t}')">${t}</button>`
+    ).join('')}</div>`;
+  }
+
+  function filterTx(type) {
+    document.querySelectorAll('#filter-bar .filter-btn').forEach(b=>{
+      b.classList.toggle('active', b.textContent===type);
+    });
+    document.querySelectorAll('#main-tx-table tr[data-type]').forEach(tr=>{
+      tr.style.display = (type==='全部' || tr.dataset.type===type) ? '' : 'none';
+    });
   }
 
   async function findRelatedWallets(mainWallet) {
@@ -398,7 +420,7 @@
         document.getElementById('s-avg-buy').textContent=d.avgBuy?fmt(d.avgBuy,4):'—';
         document.getElementById('s-avg-sell').textContent=d.avgSell?fmt(d.avgSell,4):'—';
         document.getElementById('stats-section').style.display='block';
-        document.getElementById('table-body').innerHTML=buildTxTable(d.rows);
+        document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
       }
 
       // Related wallets
