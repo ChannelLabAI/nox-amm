@@ -162,8 +162,12 @@
 <script>
   const NOX_CA    = '0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55';
   const USDT_CA   = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
-  const POOL_CA   = '0xd3211dcd145990f740f8607fb0364080d718e3e3';
-  const STAKING_CA= '0x2963103b7d93f853115c7aa055cfacec0ed77328';
+  const POOL_CA      = '0xd3211dcd145990f740f8607fb0364080d718e3e3';
+  // StakeNox proxy + staking vault (NOX transfers land in vault, not proxy)
+  const STAKING_ADDRS = new Set([
+    '0x2963103b7d93f853115c7aa055cfacec0ed77328', // StakeNox TransparentUpgradeableProxy
+    '0x944f113bb6ca6be35b97c1b3953a0a15781979f1', // staking vault (actual NOX destination)
+  ]);
   const BS        = 'https://arbitrum.blockscout.com/api/v2';
 
   const KNOWN_CONTRACTS = new Set([
@@ -196,8 +200,8 @@
     const from = row.fromAddr;
     const to   = row.toAddr;
     if(from===POOL_CA || to===POOL_CA) return row.isBuy ? '買' : '賣';
-    if(to===STAKING_CA)   return '質押';
-    if(from===STAKING_CA) return row.noxAmt < 100 ? '質押收益' : '解質押';
+    if(STAKING_ADDRS.has(to))   return '質押';
+    if(STAKING_ADDRS.has(from)) return row.noxAmt < 100 ? '質押收益' : '解質押';
     return row.isBuy ? '買' : '賣';
   }
 
