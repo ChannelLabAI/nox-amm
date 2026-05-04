@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOX 170萬業績達標，最高可領100萬</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+
+  :root {
+    --gold: #D4A842;
+    --gold-light: #F0D68A;
+    --gold-dark: #A67C2E;
+    --bg-dark: #0A0A0F;
+    --bg-card: #12121A;
+    --bg-card-hover: #1A1A28;
+    --text-primary: #EEEEF0;
+    --text-secondary: #9999AA;
+    --purple: #8B5CF6;
+    --purple-glow: rgba(139, 92, 246, 0.15);
+    --border: rgba(212, 168, 66, 0.15);
+    --s-color: #FFD700;
+    --a-color: #C084FC;
+    --b-color: #60A5FA;
+    --c-color: #34D399;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans TC', -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 50%, rgba(212, 168, 66, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 20% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 80px 0 60px;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border: 1px solid var(--gold);
+    border-radius: 50px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    background: rgba(212, 168, 66, 0.06);
+  }
+
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-secondary);
+    font-weight: 300;
+    max-width: 500px;
+    margin: 0 auto 40px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 64px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item { text-align: center; }
+
+  .stat-value {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--gold);
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Section headers */
+  .section-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .section-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .section-header p {
+    color: var(--text-secondary);
+    font-size: 15px;
+  }
+
+  /* Grand prize */
+  .grand-prize {
+    background: linear-gradient(135deg, rgba(212, 168, 66, 0.1) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border: 1px solid rgba(212, 168, 66, 0.25);
+    border-radius: 20px;
+    padding: 48px 40px;
+    text-align: center;
+    margin-bottom: 72px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grand-prize::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; right: -50%; bottom: -50%;
+    background: conic-gradient(from 0deg, transparent, rgba(212, 168, 66, 0.05), transparent, rgba(139, 92, 246, 0.05), transparent);
+    animation: rotate 20s linear infinite;
+  }
+
+  @keyframes rotate { to { transform: rotate(360deg); } }
+
+  .grand-prize > * { position: relative; z-index: 1; }
+
+  .grand-prize .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .grand-prize h3 {
+    font-size: 22px;
+    color: var(--gold-light);
+    margin-bottom: 8px;
+  }
+
+  .grand-prize .amount {
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .grand-prize .condition {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .grand-prize .note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
+
+  /* Progress bar */
+  .progress-section {
+    margin-bottom: 72px;
+  }
+
+  .progress-bar-wrapper {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--border);
+  }
+
+  .progress-months {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .month-block {
+    text-align: center;
+  }
+
+  .month-bar {
+    height: 60px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+  }
+
+  .month-bar-inner {
+    width: 100%;
+    border-radius: 6px;
+    background: linear-gradient(to top, var(--gold-dark), var(--gold));
+    transition: height 0.8s ease;
+  }
+
+  .month-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .month-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-top: 2px;
+  }
+
+  .progress-total {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .progress-total strong {
+    color: var(--gold);
+    font-size: 18px;
+  }
+
+  /* Tier cards */
+  .tiers {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 72px;
+  }
+
+  .tier-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tier-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+
+  .tier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 4px;
+  }
+
+  .tier-card.s-tier::before { background: var(--s-color); }
+  .tier-card.a-tier::before { background: var(--a-color); }
+  .tier-card.b-tier::before { background: var(--b-color); }
+  .tier-card.c-tier::before { background: var(--c-color); }
+
+  .tier-badge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 80px;
+  }
+
+  .tier-letter {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 900;
+    color: #000;
+  }
+
+  .s-tier .tier-letter { background: linear-gradient(135deg, #FFD700, #FFA500); }
+  .a-tier .tier-letter { background: linear-gradient(135deg, #C084FC, #8B5CF6); color: #fff; }
+  .b-tier .tier-letter { background: linear-gradient(135deg, #60A5FA, #3B82F6); color: #fff; }
+  .c-tier .tier-letter { background: linear-gradient(135deg, #34D399, #10B981); color: #000; }
+
+  .tier-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .tier-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .tier-section-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .tier-list {
+    list-style: none;
+  }
+
+  .tier-list li {
+    padding: 4px 0;
+    font-size: 14px;
+    color: var(--text-primary);
+    position: relative;
+    padding-left: 16px;
+  }
+
+  .tier-list li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .reward-highlight {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* Monthly contest */
+  .contest-section {
+    margin-bottom: 72px;
+  }
+
+  .contest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .contest-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+  }
+
+  .contest-card h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rank-list { list-style: none; }
+
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rank-item:last-child { border-bottom: none; }
+
+  .rank-medal {
+    font-size: 28px;
+    width: 40px;
+    text-align: center;
+  }
+
+  .rank-info { flex: 1; }
+
+  .rank-position {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .rank-reward {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .rank-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .warning-card {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.03));
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .warning-card h3 { color: #EF4444; }
+
+  .warning-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .warning-text strong {
+    color: #EF4444;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 48px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 24px;
+  }
+
+  .footer p {
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .footer .brand {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-bar { gap: 32px; }
+
+    .tier-card {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .tier-badge-col {
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+
+    .tier-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .contest-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .progress-months {
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .grand-prize { padding: 36px 24px; }
+  }
+
+  @media (max-width: 480px) {
+    .hero { padding: 48px 0 40px; }
+    .stats-bar { gap: 24px; }
+    .stat-value { font-size: 28px; }
+    .progress-months { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Scroll animations */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero fade-in">
+    <div class="hero-badge">Global Recruitment</div>
+    <h1>170萬業績達標<br>最高可領 100萬</h1>
+    <p class="hero-sub">九個月週期 ・ 四級晉升 ・ 頂尖獎勵</p>
+  </section>
+
+  <!-- Stats -->
+  <div class="stats-bar fade-in">
+    <div class="stat-item">
+      <div class="stat-value">170萬</div>
+      <div class="stat-label">目標總業績 (U)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">100萬</div>
+      <div class="stat-label">巔峰獎勵 (U)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">9</div>
+      <div class="stat-label">個月週期</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">4</div>
+      <div class="stat-label">等級制度</div>
+    </div>
+  </div>
+
+  <!-- Grand Prize -->
+  <section class="grand-prize fade-in">
+    <div class="icon">💎</div>
+    <h3>170 萬 U 巔峰獎</h3>
+    <div class="amount">100 萬 U</div>
+    <div class="condition">等值 NOX 代幣</div>
+    <div class="note">每月可領 10 萬 U，共 10 個月</div>
+  </section>
+
+  <!-- Progress -->
+  <section class="progress-section fade-in">
+    <div class="section-header">
+      <h2>📈 每月業績進度參考</h2>
+      <p>九個月穩步成長路線圖</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <div class="progress-months">
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:20%"></div></div>
+          <div class="month-value">5萬</div>
+          <div class="month-label">M1</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:40%"></div></div>
+          <div class="month-value">10萬</div>
+          <div class="month-label">M2</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:60%"></div></div>
+          <div class="month-value">15萬</div>
+          <div class="month-label">M3</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:60%"></div></div>
+          <div class="month-value">15萬</div>
+          <div class="month-label">M4</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:100%"></div></div>
+          <div class="month-value">25萬</div>
+          <div class="month-label">M5</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:100%"></div></div>
+          <div class="month-value">25萬</div>
+          <div class="month-label">M6</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:100%"></div></div>
+          <div class="month-value">25萬</div>
+          <div class="month-label">M7</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:100%"></div></div>
+          <div class="month-value">25萬</div>
+          <div class="month-label">M8</div>
+        </div>
+        <div class="month-block">
+          <div class="month-bar"><div class="month-bar-inner" style="height:100%"></div></div>
+          <div class="month-value">25萬</div>
+          <div class="month-label">M9</div>
+        </div>
+      </div>
+      <div class="progress-total">
+        九個月累計目標 <strong>170 萬 U</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tier System -->
+  <section class="fade-in">
+    <div class="section-header">
+      <h2>🛡️ 等級制度與晉升條件</h2>
+      <p>四級制度，逐級晉升，專屬獎勵</p>
+    </div>
+
+    <div class="tiers">
+
+      <!-- S Tier -->
+      <div class="tier-card s-tier fade-in">
+        <div class="tier-badge-col">
+          <div class="tier-letter">S</div>
+          <div class="tier-name">最高等級</div>
+        </div>
+        <div class="tier-content">
+          <h3>S 級團隊長</h3>
+          <div class="tier-grid">
+            <div>
+              <div class="tier-section-title">達成條件</div>
+              <ul class="tier-list">
+                <li>總業績達 <strong>130 萬 U</strong></li>
+                <li>業績質押率達 <strong>60%</strong> 以上</li>
+                <li>具備自有實體工作室</li>
+                <li>個人質押達 <strong>10 萬顆</strong> NOX 以上</li>
+              </ul>
+            </div>
+            <div>
+              <div class="tier-section-title">專屬權益</div>
+              <ul class="tier-list">
+                <li>質押收益：最高 <span class="reward-highlight">20% 返點</span></li>
+                <li>經營獎勵：<span class="reward-highlight">10 萬 U</span> 等值 NOX（第1月 3萬2、第2月 3萬2、第3月 3萬6）</li>
+                <li>奢華禮遇：<span class="reward-highlight">LV 訂製包</span>一款</li>
+                <li>線下活動補助 + 海外展會 + 高端餐會</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A Tier -->
+      <div class="tier-card a-tier fade-in">
+        <div class="tier-badge-col">
+          <div class="tier-letter">A</div>
+          <div class="tier-name">進階級</div>
+        </div>
+        <div class="tier-content">
+          <h3>A 級團隊長</h3>
+          <div class="tier-grid">
+            <div>
+              <div class="tier-section-title">達成條件</div>
+              <ul class="tier-list">
+                <li>總業績達 <strong>50 萬 U</strong></li>
+                <li>業績質押率達 <strong>60%</strong> 以上</li>
+                <li>具備自有實體工作室</li>
+                <li>個人質押達 <strong>10 萬顆</strong> NOX 以上</li>
+              </ul>
+            </div>
+            <div>
+              <div class="tier-section-title">專屬權益</div>
+              <ul class="tier-list">
+                <li>質押收益：最高 <span class="reward-highlight">20% 返點</span></li>
+                <li>經營獎勵：<span class="reward-highlight">5 萬 U</span> 等值 NOX（第1月 1萬6、第2月 1萬6、第3月 1萬8）</li>
+                <li>科技豪禮：<span class="reward-highlight">iPhone 18 Pro</span> 一台</li>
+                <li>線下活動專屬補助</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B Tier -->
+      <div class="tier-card b-tier fade-in">
+        <div class="tier-badge-col">
+          <div class="tier-letter">B</div>
+          <div class="tier-name">正式級</div>
+        </div>
+        <div class="tier-content">
+          <h3>B 級團隊長</h3>
+          <div class="tier-grid">
+            <div>
+              <div class="tier-section-title">達成條件</div>
+              <ul class="tier-list">
+                <li>總業績達 <strong>15 萬 U</strong> <span style="color:var(--gold);font-weight:700">或</span> 個人質押達 <strong>10 萬顆</strong> NOX 以上（二擇一）</li>
+                <li>業績質押率達 <strong>50%</strong> 以上</li>
+                <li>具備自有實體工作室</li>
+              </ul>
+            </div>
+            <div>
+              <div class="tier-section-title">專屬權益</div>
+              <ul class="tier-list">
+                <li>質押收益：最高 <span class="reward-highlight">20% 返點</span></li>
+                <li>正式晉升為「<span class="reward-highlight">NOX 官方團隊長</span>」</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- C Tier -->
+      <div class="tier-card c-tier fade-in">
+        <div class="tier-badge-col">
+          <div class="tier-letter">C</div>
+          <div class="tier-name">實習級</div>
+        </div>
+        <div class="tier-content">
+          <h3>C 級實習團隊長</h3>
+          <div class="tier-grid">
+            <div>
+              <div class="tier-section-title">達成條件</div>
+              <ul class="tier-list">
+                <li>個人質押達 <strong>1 萬顆</strong> NOX 以上</li>
+              </ul>
+            </div>
+            <div>
+              <div class="tier-section-title">專屬權益</div>
+              <ul class="tier-list">
+                <li>初始收益：<span class="reward-highlight">20% 初始質押返點</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Monthly Contest -->
+  <section class="contest-section fade-in">
+    <div class="section-header">
+      <h2>⚔️ 月度競賽與考核機制</h2>
+      <p>競爭激勵，適者生存</p>
+    </div>
+
+    <div class="contest-grid">
+      <div class="contest-card">
+        <h3>🔥 單月巔峰排名獎</h3>
+        <ul class="rank-list">
+          <li class="rank-item">
+            <div class="rank-medal">🥇</div>
+            <div class="rank-info">
+              <div class="rank-position">第一名</div>
+              <div class="rank-reward">800 U 等值 NOX</div>
+            </div>
+          </li>
+          <li class="rank-item">
+            <div class="rank-medal">🥈</div>
+            <div class="rank-info">
+              <div class="rank-position">第二名</div>
+              <div class="rank-reward">500 U 等值 NOX</div>
+            </div>
+          </li>
+          <li class="rank-item">
+            <div class="rank-medal">🥉</div>
+            <div class="rank-info">
+              <div class="rank-position">第三名</div>
+              <div class="rank-reward">300 U 等值 NOX</div>
+            </div>
+          </li>
+        </ul>
+        <div class="rank-note">
+          * 單月業績須滿 <strong style="color:var(--gold)">10 萬 U</strong> 始具領獎資格
+        </div>
+      </div>
+
+      <div class="contest-card warning-card">
+        <h3>⚠️ 汰除預警</h3>
+        <div class="warning-text">
+          <p>新人考核期為加入計劃的<strong>首兩個月</strong>。</p>
+          <br>
+          <p>若業績未達目標進度，將<strong>直接取消團隊長資格</strong>並執行淘汰機制。</p>
+          <br>
+          <p style="font-size:13px; opacity:0.7">本計劃採嚴格考核，確保每位團隊長都是精英中的精英。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="brand">NOX</div>
+    <p>團隊長全球招募與激勵計劃</p>
+    <p style="margin-top:8px; opacity:0.5">所有獎勵以等值 NOX 代幣發放 ・ 最終解釋權歸 NOX 官方所有</p>
+  </footer>
+
+</div>
+
+<script>
+  // Scroll animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Auto-trigger first visible elements
+  setTimeout(() => {
+    document.querySelectorAll('.hero, .stats-bar').forEach(el => el.classList.add('visible'));
+  }, 100);
+</script>
+
+</body>
+</html>
