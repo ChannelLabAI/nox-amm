@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NOX 底池 × 幣價對照</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+  :root {
+    --bg: #0A0A0F;
+    --card: #12121A;
+    --border: rgba(212,168,66,.15);
+    --gold: #D4A842;
+    --gold-light: #F0D68A;
+    --green: #22C55E;
+    --muted: #9999AA;
+    --text: #EEEEF0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; }
+
+  .wrap { max-width:860px; margin:0 auto; padding:48px 24px; }
+
+  /* Header */
+  .page-title { text-align:center; margin-bottom:40px; }
+  .page-title h1 {
+    font-size:clamp(22px,4vw,32px); font-weight:900;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    margin-bottom:6px;
+  }
+  .page-title p { color:var(--muted); font-size:13px; letter-spacing:1px; }
+
+  /* Pool stats */
+  .pool-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:36px; }
+  @media(max-width:560px){ .pool-row { grid-template-columns:repeat(2,1fr); } }
+  .pool-card {
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:18px; text-align:center;
+  }
+  .pool-card .lbl { font-size:11px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+  .pool-card .val { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; color:var(--gold); }
+  .pool-card .unit { font-size:12px; color:var(--muted); font-weight:400; margin-left:3px; }
+
+  /* Chart */
+  .chart-card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:28px; margin-bottom:28px;
+  }
+  .chart-label { font-size:13px; color:var(--muted); margin-bottom:16px; }
+  canvas { width:100%!important; }
+
+  /* Table */
+  .table-card {
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    overflow:hidden;
+  }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead th {
+    padding:12px 16px; text-align:left; color:var(--muted);
+    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    border-bottom:1px solid var(--border); font-weight:500;
+  }
+  tbody tr { border-bottom:1px solid rgba(255,255,255,.03); transition:background .15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:rgba(212,168,66,.03); }
+  tbody td { padding:13px 16px; font-family:'JetBrains Mono',monospace; }
+  .td-usdt { color:var(--muted); }
+  .td-price { color:var(--gold); font-weight:700; }
+  .td-change { color:var(--green); font-weight:700; }
+  .td-nox { color:var(--text); }
+  .row-current td { background:rgba(212,168,66,.05); }
+  .row-current .td-usdt { color:var(--gold); }
+
+  footer { text-align:center; margin-top:32px; font-size:12px; color:var(--muted); opacity:.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-title">
+    <h1>NOX 底池 × 幣價對照</h1>
+    <p>Uniswap V2 · x · y = k · 即時快照</p>
+  </div>
+
+  <div class="pool-row">
+    <div class="pool-card">
+      <div class="lbl">NOX 池量</div>
+      <div class="val">1,151,799<span class="unit">NOX</span></div>
+    </div>
+    <div class="pool-card">
+      <div class="lbl">USDT 池量</div>
+      <div class="val">888,943<span class="unit">U</span></div>
+    </div>
+    <div class="pool-card">
+      <div class="lbl">當前幣價</div>
+      <div class="val">0.7717<span class="unit">U</span></div>
+    </div>
+    <div class="pool-card">
+      <div class="lbl">流動性 k</div>
+      <div class="val" style="font-size:16px">1.024T</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-label">買入資金 (USDT) → 成交後幣價 (U)</div>
+    <canvas id="chart" height="260"></canvas>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>買入資金 (U)</th>
+          <th>成交後幣價</th>
+          <th>漲幅</th>
+          <th>底池 NOX 剩餘</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <footer>NOX AMM Pool Snapshot · x·y=k Constant Product</footer>
+</div>
+
+<script>
+const NOX0 = 1151799, USDT0 = 888943, K = NOX0 * USDT0, P0 = USDT0 / NOX0;
+
+const rows = [
+  0,
+  100000, 500000, 1000000, 2000000, 3000000,
+  5000000, 10000000, 20000000, 30000000,
+  50000000, 100000000
+];
+
+function calcBuy(dU) {
+  const y1 = USDT0 + dU;
+  const x1 = K / y1;
+  return { price: y1 / x1, noxLeft: x1 };
+}
+
+function fmt(n, d=0) {
+  return d === 0 ? Math.round(n).toLocaleString('en-US')
+    : n.toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+
+function fmtU(n) {
+  if(n >= 100000000) return (n/100000000).toFixed(0) + '億';
+  if(n >= 10000000)  return (n/10000000).toFixed(1) + '千萬';
+  if(n >= 1000000)   return (n/1000000).toFixed(0) + '百萬';
+  if(n >= 10000)     return (n/10000).toFixed(0) + '萬';
+  return n.toLocaleString();
+}
+
+// Table
+const tbody = document.getElementById('tbody');
+for(const dU of rows) {
+  const {price, noxLeft} = calcBuy(dU);
+  const pct = ((price - P0) / P0 * 100);
+  const isCurrent = dU === 0;
+  const tr = document.createElement('tr');
+  if(isCurrent) tr.className = 'row-current';
+  tr.innerHTML = `
+    <td class="td-usdt">${isCurrent ? '（當前）' : fmtU(dU)}</td>
+    <td class="td-price">${fmt(price, price < 10 ? 3 : (price < 100 ? 1 : 0))} U</td>
+    <td class="td-change">${isCurrent ? '—' : '+' + fmt(pct, 0) + '%'}</td>
+    <td class="td-nox">${fmt(noxLeft)}</td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// Chart
+(function drawChart() {
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 56;
+  const H = 260;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = {top:16, right:24, bottom:36, left:68};
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  const maxU = 56000000, steps = 300;
+  const pts = [];
+  for(let i=0;i<=steps;i++){
+    const dU = (i/steps)*maxU;
+    const {price} = calcBuy(dU);
+    pts.push({x: dU, y: price});
+  }
+  const maxP = pts[pts.length-1].y * 1.05;
+  const minP = P0 * 0.95;
+
+  function px(dU){ return pad.left + (dU/maxU)*cW; }
+  function py(p){ return pad.top + (1-(p-minP)/(maxP-minP))*cH; }
+
+  // Grid lines + Y labels
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  const yTicks = [0.77, 1, 2, 5, 10, 50, 200, 1000, 3000];
+  for(const t of yTicks){
+    if(t < minP || t > maxP) continue;
+    const y = py(t);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cW, y); ctx.stroke();
+    ctx.fillStyle='#555'; ctx.font='10px JetBrains Mono'; ctx.textAlign='right';
+    ctx.fillText(t >= 1000 ? Math.round(t)+'U' : t+'U', pad.left-6, y+4);
+  }
+
+  // X labels
+  const xTicks = [0,10,20,30,40,50,56].map(v=>v*1000000);
+  for(const t of xTicks){
+    const x = px(t);
+    ctx.fillStyle='#555'; ctx.font='10px JetBrains Mono'; ctx.textAlign='center';
+    ctx.fillText(t===0 ? '0' : (t/1000000)+'M', x, H-6);
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+cH);
+  grad.addColorStop(0, 'rgba(212,168,66,.18)');
+  grad.addColorStop(1, 'rgba(212,168,66,0)');
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(minP));
+  for(const p of pts) ctx.lineTo(px(p.x), py(p.y));
+  ctx.lineTo(px(maxU), py(minP));
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  // Curve
+  ctx.beginPath();
+  pts.forEach((p,i) => { const f = i===0?'moveTo':'lineTo'; ctx[f](px(p.x),py(p.y)); });
+  ctx.strokeStyle='#D4A842'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Current price dot
+  ctx.beginPath(); ctx.arc(px(0), py(P0), 5, 0, Math.PI*2);
+  ctx.fillStyle='#22C55E'; ctx.fill();
+  ctx.fillStyle='#22C55E'; ctx.font='bold 11px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillText('現在 '+P0.toFixed(4)+' U', px(0)+10, py(P0)-6);
+
+  // Axis labels
+  ctx.fillStyle='#555'; ctx.font='11px Noto Sans TC'; ctx.textAlign='center';
+  ctx.fillText('買入 USDT', pad.left+cW/2, H+2);
+})();
+
+window.addEventListener('resize', () => location.reload());
+</script>
+</body>
+</html>
