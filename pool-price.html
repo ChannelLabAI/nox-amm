@@ -115,6 +115,7 @@
           <th>成交後幣價</th>
           <th>漲幅</th>
           <th>底池 NOX 剩餘</th>
+          <th>底池 USDT</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -137,7 +138,7 @@ const rows = [
 function calcBuy(dU) {
   const y1 = USDT0 + dU;
   const x1 = K / y1;
-  return { price: y1 / x1, noxLeft: x1 };
+  return { price: y1 / x1, noxLeft: x1, usdtPool: y1 };
 }
 
 function fmt(n, d=0) {
@@ -156,7 +157,7 @@ function fmtU(n) {
 // Table
 const tbody = document.getElementById('tbody');
 for(const dU of rows) {
-  const {price, noxLeft} = calcBuy(dU);
+  const {price, noxLeft, usdtPool} = calcBuy(dU);
   const pct = ((price - P0) / P0 * 100);
   const isCurrent = dU === 0;
   const tr = document.createElement('tr');
@@ -166,6 +167,7 @@ for(const dU of rows) {
     <td class="td-price">${fmt(price, price < 10 ? 3 : (price < 100 ? 1 : 0))} U</td>
     <td class="td-change">${isCurrent ? '—' : '+' + fmt(pct, 0) + '%'}</td>
     <td class="td-nox">${fmt(noxLeft)}</td>
+    <td class="td-usdt">${fmt(usdtPool)}</td>
   `;
   tbody.appendChild(tr);
 }
