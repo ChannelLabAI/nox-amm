@@ -256,7 +256,7 @@ function drawChart(hoverDU) {
 
   // Crosshair & tooltip when hovering
   if(hoverDU >= 0) {
-    const {price,nox,usdt} = calcBuy(hoverDU);
+    const {price, noxLeft:nox, usdtPool:usdt} = calcBuy(hoverDU);
     const mx = px(hoverDU), my = py(price);
 
     // Vertical line
