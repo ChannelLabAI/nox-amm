@@ -73,6 +73,12 @@
   .row-current .td-usdt { color:var(--gold); }
 
   footer { text-align:center; margin-top:32px; font-size:12px; color:var(--muted); opacity:.5; }
+  .chart-info {
+    display:flex; gap:16px; flex-wrap:wrap; margin-top:12px;
+    font-size:13px; color:var(--muted); font-family:'JetBrains Mono',monospace;
+    min-height:20px;
+  }
+  .chart-info b { color:var(--text); }
 </style>
 </head>
 <body>
@@ -105,6 +111,7 @@
   <div class="chart-card">
     <div class="chart-label">買入資金 (USDT) → 成交後幣價 (U)</div>
     <canvas id="chart" height="260"></canvas>
+    <div class="chart-info" id="chart-info"><span style="color:#9999AA">← 拖動圖表查看各點位數據</span></div>
   </div>
 
   <div class="table-card">
@@ -169,80 +176,161 @@ for(const dU of rows) {
   tbody.appendChild(tr);
 }
 
-// Chart
-(function drawChart() {
-  const canvas = document.getElementById('chart');
-  const dpr = window.devicePixelRatio || 1;
+// Chart — interactive
+const maxU = 56000000, STEPS = 400;
+const PAD = {top:16, right:24, bottom:36, left:68};
+let cursorDU = -1; // -1 = no cursor
+
+const canvas = document.getElementById('chart');
+const dpr = window.devicePixelRatio || 1;
+
+function initCanvas() {
   const W = canvas.parentElement.clientWidth - 56;
   const H = 260;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+}
 
-  const pad = {top:16, right:24, bottom:36, left:68};
-  const cW = W - pad.left - pad.right;
-  const cH = H - pad.top - pad.bottom;
-
-  const maxU = 56000000, steps = 300;
-  const pts = [];
-  for(let i=0;i<=steps;i++){
-    const dU = (i/steps)*maxU;
-    const {price} = calcBuy(dU);
-    pts.push({x: dU, y: price});
+// Pre-compute curve points
+let PTS = [];
+function buildPts() {
+  PTS = [];
+  for(let i=0;i<=STEPS;i++){
+    const dU = (i/STEPS)*maxU;
+    const {price, noxLeft, usdtPool} = calcBuy(dU);
+    PTS.push({x:dU, y:price, nox:noxLeft, usdt:usdtPool});
   }
-  const maxP = pts[pts.length-1].y * 1.05;
+}
+
+function drawChart(hoverDU) {
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W = parseInt(canvas.style.width);
+  const H = 260;
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+  const maxP = PTS[PTS.length-1].y * 1.05;
   const minP = P0 * 0.95;
 
-  function px(dU){ return pad.left + (dU/maxU)*cW; }
-  function py(p){ return pad.top + (1-(p-minP)/(maxP-minP))*cH; }
+  function px(dU){ return PAD.left + (dU/maxU)*cW; }
+  function py(p){ return PAD.top + (1-(p-minP)/(maxP-minP))*cH; }
 
-  // Grid lines + Y labels
-  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth=1;
-  const yTicks = [0.77, 1, 2, 5, 10, 50, 200, 1000, 3000];
+  ctx.clearRect(0,0,W,H);
+
+  // Grid + Y labels
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  const yTicks=[0.77,1,2,5,10,50,200,1000,3000];
   for(const t of yTicks){
-    if(t < minP || t > maxP) continue;
-    const y = py(t);
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cW, y); ctx.stroke();
+    if(t<minP||t>maxP) continue;
+    const y=py(t);
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(PAD.left+cW,y); ctx.stroke();
     ctx.fillStyle='#555'; ctx.font='10px JetBrains Mono'; ctx.textAlign='right';
-    ctx.fillText(t >= 1000 ? Math.round(t)+'U' : t+'U', pad.left-6, y+4);
+    ctx.fillText(t>=1000?Math.round(t)+'U':t+'U', PAD.left-6, y+4);
   }
 
   // X labels
-  const xTicks = [0,10,20,30,40,50,56].map(v=>v*1000000);
-  for(const t of xTicks){
-    const x = px(t);
+  for(const t of [0,10,20,30,40,50,56].map(v=>v*1000000)){
     ctx.fillStyle='#555'; ctx.font='10px JetBrains Mono'; ctx.textAlign='center';
-    ctx.fillText(t===0 ? '0' : (t/1000000)+'M', x, H-6);
+    ctx.fillText(t===0?'0':(t/1000000)+'M', px(t), H-6);
   }
 
   // Gradient fill
-  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+cH);
-  grad.addColorStop(0, 'rgba(212,168,66,.18)');
-  grad.addColorStop(1, 'rgba(212,168,66,0)');
-  ctx.beginPath();
-  ctx.moveTo(px(0), py(minP));
-  for(const p of pts) ctx.lineTo(px(p.x), py(p.y));
-  ctx.lineTo(px(maxU), py(minP));
-  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  const grad=ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+  grad.addColorStop(0,'rgba(212,168,66,.18)');
+  grad.addColorStop(1,'rgba(212,168,66,0)');
+  ctx.beginPath(); ctx.moveTo(px(0),py(minP));
+  for(const p of PTS) ctx.lineTo(px(p.x),py(p.y));
+  ctx.lineTo(px(maxU),py(minP)); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
 
   // Curve
   ctx.beginPath();
-  pts.forEach((p,i) => { const f = i===0?'moveTo':'lineTo'; ctx[f](px(p.x),py(p.y)); });
+  PTS.forEach((p,i)=>{ i===0?ctx.moveTo(px(p.x),py(p.y)):ctx.lineTo(px(p.x),py(p.y)); });
   ctx.strokeStyle='#D4A842'; ctx.lineWidth=2.5; ctx.stroke();
 
-  // Current price dot
-  ctx.beginPath(); ctx.arc(px(0), py(P0), 5, 0, Math.PI*2);
+  // Origin dot
+  ctx.beginPath(); ctx.arc(px(0),py(P0),5,0,Math.PI*2);
   ctx.fillStyle='#22C55E'; ctx.fill();
   ctx.fillStyle='#22C55E'; ctx.font='bold 11px JetBrains Mono'; ctx.textAlign='left';
   ctx.fillText('現在 '+P0.toFixed(4)+' U', px(0)+10, py(P0)-6);
 
-  // Axis labels
-  ctx.fillStyle='#555'; ctx.font='11px Noto Sans TC'; ctx.textAlign='center';
-  ctx.fillText('買入 USDT', pad.left+cW/2, H+2);
-})();
+  // Crosshair & tooltip when hovering
+  if(hoverDU >= 0) {
+    const {price,nox,usdt} = calcBuy(hoverDU);
+    const mx = px(hoverDU), my = py(price);
 
-window.addEventListener('resize', () => location.reload());
+    // Vertical line
+    ctx.setLineDash([4,4]); ctx.strokeStyle='rgba(212,168,66,.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(mx,PAD.top); ctx.lineTo(mx,PAD.top+cH); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Moving dot
+    ctx.beginPath(); ctx.arc(mx,my,7,0,Math.PI*2);
+    ctx.fillStyle='#D4A842'; ctx.fill();
+    ctx.strokeStyle='#0A0A0F'; ctx.lineWidth=2; ctx.stroke();
+
+    // Tooltip box
+    const lines = [
+      '買入: '+fmtU(hoverDU),
+      '幣價: '+(price<10?price.toFixed(3):price<100?price.toFixed(1):Math.round(price))+' U',
+      'NOX: '+fmt(nox),
+      'USDT池: '+fmt(usdt)
+    ];
+    const tw = 148, th = lines.length*17+12;
+    let tx = mx+14, ty = my-th/2;
+    if(tx+tw>W-8) tx = mx-tw-14;
+    if(ty<PAD.top) ty=PAD.top;
+    if(ty+th>PAD.top+cH) ty=PAD.top+cH-th;
+    ctx.fillStyle='rgba(18,18,26,.95)'; ctx.strokeStyle='rgba(212,168,66,.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(tx,ty,tw,th,6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#EEEEF0'; ctx.font='11px JetBrains Mono'; ctx.textAlign='left';
+    lines.forEach((l,i)=>ctx.fillText(l, tx+8, ty+16+i*17));
+
+    // Update info bar
+    document.getElementById('chart-info').innerHTML =
+      '<span>買入 <b>'+fmtU(hoverDU)+'</b></span>' +
+      '<span>幣價 <b style="color:#D4A842">'+(price<10?price.toFixed(3):price<100?price.toFixed(1):Math.round(price))+' U</b></span>' +
+      '<span>漲幅 <b style="color:#22C55E">+'+(((price-P0)/P0)*100).toFixed(0)+'%</b></span>' +
+      '<span>NOX池 <b>'+fmt(nox)+'</b></span>' +
+      '<span>USDT池 <b>'+fmt(usdt)+'</b></span>';
+  } else {
+    document.getElementById('chart-info').innerHTML =
+      '<span style="color:#9999AA">← 拖動圖表查看各點位數據</span>';
+  }
+
+  // Axis label
+  ctx.fillStyle='#555'; ctx.font='11px Noto Sans TC'; ctx.textAlign='center';
+  ctx.fillText('買入 USDT', PAD.left+cW/2, H+2);
+}
+
+function getCanvasDU(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const W = parseInt(canvas.style.width);
+  const cW = W - PAD.left - PAD.right;
+  const relX = clientX - rect.left - PAD.left;
+  const dU = Math.max(0, Math.min(maxU, (relX/cW)*maxU));
+  return dU;
+}
+
+canvas.addEventListener('mousemove', e => {
+  cursorDU = getCanvasDU(e.clientX);
+  drawChart(cursorDU);
+});
+canvas.addEventListener('mouseleave', () => {
+  cursorDU = -1;
+  drawChart(-1);
+});
+canvas.addEventListener('touchstart', e => { e.preventDefault(); cursorDU=getCanvasDU(e.touches[0].clientX); drawChart(cursorDU); }, {passive:false});
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); cursorDU=getCanvasDU(e.touches[0].clientX); drawChart(cursorDU); }, {passive:false});
+canvas.addEventListener('touchend',   e => { cursorDU=-1; drawChart(-1); });
+
+canvas.style.cursor = 'crosshair';
+
+initCanvas();
+buildPts();
+drawChart(-1);
+
+window.addEventListener('resize', () => { initCanvas(); buildPts(); drawChart(cursorDU); });
 </script>
 </body>
 </html>
