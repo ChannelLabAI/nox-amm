@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOX AMM 幣價模擬器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --gold: #D4A842;
+    --gold-light: #F0D68A;
+    --gold-dark: #A67C2E;
+    --green: #22C55E;
+    --green-glow: rgba(34, 197, 94, 0.15);
+    --red: #EF4444;
+    --bg-dark: #0A0A0F;
+    --bg-card: #12121A;
+    --bg-card-hover: #1A1A28;
+    --bg-input: #0E0E16;
+    --text-primary: #EEEEF0;
+    --text-secondary: #9999AA;
+    --purple: #8B5CF6;
+    --blue: #3B82F6;
+    --border: rgba(212, 168, 66, 0.15);
+    --border-focus: rgba(212, 168, 66, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans TC', -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.7;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 197, 94, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 50%, rgba(212, 168, 66, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 20% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 60px 0 40px;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 5px 16px;
+    border: 1px solid var(--green);
+    border-radius: 50px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    background: var(--green-glow);
+  }
+
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 300;
+  }
+
+  .formula-bar {
+    display: inline-block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 28px;
+    margin-top: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+
+  /* Current pool state */
+  .pool-state {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 40px 0;
+  }
+
+  .pool-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .pool-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .pool-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .pool-stat-value .unit {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  /* Simulator */
+  .simulator {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .sim-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .sim-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .sim-direction {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dir-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dir-btn.active {
+    background: var(--green-glow);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .dir-btn.sell.active {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .input-group {
+    margin-bottom: 24px;
+  }
+
+  .input-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .input-wrapper {
+    position: relative;
+  }
+
+  .input-wrapper input {
+    width: 100%;
+    padding: 16px 20px;
+    padding-right: 60px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrapper input:focus {
+    border-color: var(--border-focus);
+  }
+
+  .input-unit {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .slider-wrapper {
+    margin-top: 12px;
+  }
+
+  .slider-wrapper input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--gold-dark), var(--gold), var(--green));
+    outline: none;
+  }
+
+  .slider-wrapper input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    border: 3px solid var(--bg-dark);
+    box-shadow: 0 0 10px rgba(212, 168, 66, 0.3);
+  }
+
+  .preset-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .preset-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(212, 168, 66, 0.06);
+  }
+
+  /* Results */
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+
+  .result-card {
+    background: var(--bg-input);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .result-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .result-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .result-change {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+
+  .result-card.highlight {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(212, 168, 66, 0.06));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  /* Chart area */
+  .chart-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .chart-section h2 {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 16px;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Reference table */
+  .ref-table-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .ref-table-section h2 {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ref-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ref-table td {
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .ref-table tr:hover td {
+    background: rgba(212, 168, 66, 0.03);
+  }
+
+  .ref-table .highlight-row td {
+    background: rgba(34, 197, 94, 0.05);
+  }
+
+  .badge-up {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--green);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* Explanation */
+  .explain {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .explain h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .explain p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    margin-bottom: 12px;
+    line-height: 1.8;
+  }
+
+  .explain strong { color: var(--text-primary); }
+  .explain .gold { color: var(--gold); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer p {
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .pool-state { grid-template-columns: repeat(2, 1fr); }
+    .results { grid-template-columns: 1fr; }
+    .simulator { padding: 24px; }
+    .chart-section, .ref-table-section, .explain { padding: 24px; }
+    .ref-table { font-size: 12px; }
+    .ref-table th, .ref-table td { padding: 10px 8px; }
+  }
+
+  @media (max-width: 480px) {
+    .pool-state { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pool-stat { padding: 14px; }
+    .pool-stat-value { font-size: 18px; }
+    .input-wrapper input { font-size: 20px; }
+    .hero { padding: 40px 0 24px; }
+  }
+
+  /* Animations */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <section class="hero fade-in">
+    <div class="hero-badge">AMM Simulator</div>
+    <h1>NOX 幣價變動模擬器</h1>
+    <p class="hero-sub">基於 Uniswap V2 恆定乘積模型，模擬資金進出對幣價的影響</p>
+    <div class="formula-bar">x &middot; y = k</div>
+  </section>
+
+  <div class="pool-state fade-in">
+    <div class="pool-stat">
+      <div class="pool-stat-label">NOX 池量 (x)</div>
+      <div class="pool-stat-value">1,151,799<span class="unit">NOX</span></div>
+    </div>
+    <div class="pool-stat">
+      <div class="pool-stat-label">USDT 池量 (y)</div>
+      <div class="pool-stat-value">888,943<span class="unit">U</span></div>
+    </div>
+    <div class="pool-stat">
+      <div class="pool-stat-label">當前價格</div>
+      <div class="pool-stat-value">0.7717<span class="unit">U</span></div>
+    </div>
+    <div class="pool-stat">
+      <div class="pool-stat-label">流動性 k</div>
+      <div class="pool-stat-value" style="font-size:15px">1.024T</div>
+    </div>
+  </div>
+
+  <!-- Simulator -->
+  <section class="simulator fade-in">
+    <div class="sim-header">
+      <h2>模擬計算</h2>
+      <div class="sim-direction">
+        <button class="dir-btn active" id="btn-buy" onclick="setDirection('buy')">買入 (進場)</button>
+        <button class="dir-btn sell" id="btn-sell" onclick="setDirection('sell')">賣出 (出場)</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label" id="input-label-text">輸入進場資金</label>
+      <div class="input-wrapper">
+        <input type="number" id="amount-input" value="1000000" min="0" step="10000" oninput="calculate()">
+        <span class="input-unit" id="input-unit-text">USDT</span>
+      </div>
+      <div class="slider-wrapper">
+        <input type="range" id="amount-slider" min="10000" max="56000000" step="100000" value="1000000" oninput="syncSlider()">
+      </div>
+      <div class="preset-btns">
+        <button class="preset-btn" onclick="setAmount(100000)">10萬</button>
+        <button class="preset-btn" onclick="setAmount(500000)">50萬</button>
+        <button class="preset-btn" onclick="setAmount(1000000)">100萬</button>
+        <button class="preset-btn" onclick="setAmount(3000000)">300萬</button>
+        <button class="preset-btn" onclick="setAmount(5000000)">500萬</button>
+        <button class="preset-btn" onclick="setAmount(10000000)">1000萬</button>
+        <button class="preset-btn" onclick="setAmount(100000000)">1億</button>
+      </div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="result-card highlight">
+        <div class="result-label">成交後幣價</div>
+        <div class="result-value up" id="res-price">2.69 U</div>
+        <div class="result-change up" id="res-change">+532%</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label" id="res-nox-label">可購得 NOX</div>
+        <div class="result-value" id="res-nox" style="color:var(--gold)">933,869</div>
+        <div class="result-sub" id="res-avg">均價 1.071 U/NOX</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">剩餘池內 NOX</div>
+        <div class="result-value" id="res-pool-nox">615,061</div>
+        <div class="result-sub" id="res-pool-pct">減少 60.3%</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">新池內 USDT</div>
+        <div class="result-value" id="res-pool-usdt">1,658,620</div>
+        <div class="result-sub" id="res-pool-usdt-pct">增加 151.8%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chart -->
+  <section class="chart-section fade-in">
+    <h2>價格影響曲線</h2>
+    <div class="chart-container">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </section>
+
+  <!-- Reference table -->
+  <section class="ref-table-section fade-in">
+    <h2>資金進場參考表</h2>
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>進場資金 (U)</th>
+          <th>成交後幣價</th>
+          <th>價格漲幅</th>
+          <th>可購得 NOX</th>
+          <th>均價</th>
+        </tr>
+      </thead>
+      <tbody id="ref-tbody"></tbody>
+    </table>
+  </section>
+
+  <!-- Explanation -->
+  <section class="explain fade-in">
+    <h2>模型說明</h2>
+    <p>本模擬器基於 <strong>Uniswap V2</strong> 的<span class="gold">恆定乘積做市商（CPMM）</span>模型：<strong>x &middot; y = k</strong></p>
+    <p>其中 <strong>x</strong> = 池內 NOX 數量，<strong>y</strong> = 池內 USDT 數量，<strong>k</strong> = 常數（不因交易改變）。</p>
+    <p>當資金進場買入 NOX 時，USDT 流入池中（y 增加），NOX 流出池中（x 減少），但 k 維持不變。交易越大，<span class="gold">滑點越高</span>，實際均價會高於當前價。</p>
+    <p>初始池：<strong>1,151,799 NOX</strong> + <strong>888,943 USDT</strong>，k &approx; <strong>1.024 兆</strong></p>
+  </section>
+
+  <footer class="footer">
+    <p>NOX AMM Price Simulator &middot; Constant Product Model (x&middot;y=k)</p>
+  </footer>
+
+</div>
+
+<script>
+  // Pool constants
+  const INIT_NOX = 1151799;
+  const INIT_USDT = 888943;
+  const K = INIT_NOX * INIT_USDT;
+  const INIT_PRICE = INIT_USDT / INIT_NOX;
+
+  // Slider max: buy mode ~56M USDT (→ ~3000U), sell mode 100M NOX (1億)
+  const SLIDER_MAX_BUY  = 56000000;
+  const SLIDER_MAX_SELL = 100000000;
+
+  let direction = 'buy';
+
+  function sliderMax() { return direction === 'buy' ? SLIDER_MAX_BUY : SLIDER_MAX_SELL; }
+
+  function setDirection(dir) {
+    direction = dir;
+    document.getElementById('btn-buy').classList.toggle('active', dir === 'buy');
+    document.getElementById('btn-sell').classList.toggle('active', dir === 'sell');
+    const slider = document.getElementById('amount-slider');
+    slider.max = sliderMax();
+    if (dir === 'buy') {
+      document.getElementById('input-label-text').textContent = '輸入進場資金';
+      document.getElementById('input-unit-text').textContent = 'USDT';
+    } else {
+      document.getElementById('input-label-text').textContent = '輸入賣出 NOX 數量';
+      document.getElementById('input-unit-text').textContent = 'NOX';
+    }
+    calculate();
+  }
+
+  function setAmount(val) {
+    document.getElementById('amount-input').value = val;
+    document.getElementById('amount-slider').value = Math.min(val, sliderMax());
+    calculate();
+  }
+
+  function syncSlider() {
+    document.getElementById('amount-input').value = document.getElementById('amount-slider').value;
+    calculate();
+  }
+
+  function fmt(n, decimals = 0) {
+    if (decimals === 0) return Math.round(n).toLocaleString('en-US');
+    return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  }
+
+  function calculate() {
+    const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+    if (amount <= 0) return;
+
+    if (direction === 'buy') {
+      calcBuy(amount);
+    } else {
+      calcSell(amount);
+    }
+    drawChart();
+  }
+
+  function calcBuy(usdtIn) {
+    const newUsdt = INIT_USDT + usdtIn;
+    const newNox = K / newUsdt;
+    const noxOut = INIT_NOX - newNox;
+    const newPrice = newUsdt / newNox;
+    const avgPrice = usdtIn / noxOut;
+    const priceChange = ((newPrice - INIT_PRICE) / INIT_PRICE * 100);
+    const noxChangePct = ((newNox - INIT_NOX) / INIT_NOX * 100);
+    const usdtChangePct = ((newUsdt - INIT_USDT) / INIT_USDT * 100);
+
+    document.getElementById('res-price').textContent = fmt(newPrice, newPrice < 10 ? 3 : 2) + ' U';
+    document.getElementById('res-price').className = 'result-value up';
+    document.getElementById('res-change').textContent = '+' + fmt(priceChange, 0) + '%';
+    document.getElementById('res-change').className = 'result-change up';
+
+    document.getElementById('res-nox-label').textContent = '可購得 NOX';
+    document.getElementById('res-nox').textContent = fmt(noxOut);
+    document.getElementById('res-avg').textContent = '均價 ' + fmt(avgPrice, 3) + ' U/NOX';
+
+    document.getElementById('res-pool-nox').textContent = fmt(newNox);
+    document.getElementById('res-pool-pct').textContent = '減少 ' + fmt(Math.abs(noxChangePct), 1) + '%';
+
+    document.getElementById('res-pool-usdt').textContent = fmt(newUsdt);
+    document.getElementById('res-pool-usdt-pct').textContent = '增加 ' + fmt(usdtChangePct, 1) + '%';
+  }
+
+  function calcSell(noxIn) {
+    const newNox = INIT_NOX + noxIn;
+    const newUsdt = K / newNox;
+    const usdtOut = INIT_USDT - newUsdt;
+    const newPrice = newUsdt / newNox;
+    const avgPrice = usdtOut / noxIn;
+    const priceChange = ((newPrice - INIT_PRICE) / INIT_PRICE * 100);
+    const noxChangePct = ((newNox - INIT_NOX) / INIT_NOX * 100);
+    const usdtChangePct = ((newUsdt - INIT_USDT) / INIT_USDT * 100);
+
+    document.getElementById('res-price').textContent = fmt(newPrice, newPrice < 1 ? 4 : 3) + ' U';
+    document.getElementById('res-price').className = 'result-value down';
+    document.getElementById('res-change').textContent = fmt(priceChange, 1) + '%';
+    document.getElementById('res-change').className = 'result-change down';
+
+    document.getElementById('res-nox-label').textContent = '可套現 USDT';
+    document.getElementById('res-nox').textContent = fmt(usdtOut);
+    document.getElementById('res-avg').textContent = '均價 ' + fmt(avgPrice, 4) + ' U/NOX';
+
+    document.getElementById('res-pool-nox').textContent = fmt(newNox);
+    document.getElementById('res-pool-pct').textContent = '增加 ' + fmt(noxChangePct, 1) + '%';
+
+    document.getElementById('res-pool-usdt').textContent = fmt(newUsdt);
+    document.getElementById('res-pool-usdt-pct').textContent = '減少 ' + fmt(Math.abs(usdtChangePct), 1) + '%';
+  }
+
+  // Reference table
+  function buildRefTable() {
+    const amounts = [50000, 100000, 200000, 500000, 1000000, 2000000, 3000000, 5000000, 10000000, 20000000, 30000000, 50000000, 100000000];
+    const tbody = document.getElementById('ref-tbody');
+    tbody.innerHTML = '';
+
+    for (const amt of amounts) {
+      const newUsdt = INIT_USDT + amt;
+      const newNox = K / newUsdt;
+      const noxOut = INIT_NOX - newNox;
+      const newPrice = newUsdt / newNox;
+      const avgPrice = amt / noxOut;
+      const change = ((newPrice - INIT_PRICE) / INIT_PRICE * 100);
+
+      const highlight = (amt === 1000000 || amt === 10000000) ? ' class="highlight-row"' : '';
+      tbody.innerHTML += `<tr${highlight}>
+        <td>${fmt(amt)}</td>
+        <td style="color:var(--gold);font-weight:700">${fmt(newPrice, newPrice < 10 ? 3 : 2)} U</td>
+        <td><span class="badge-up">+${fmt(change, 0)}%</span></td>
+        <td>${fmt(noxOut)}</td>
+        <td>${fmt(avgPrice, 3)} U</td>
+      </tr>`;
+    }
+  }
+
+  // Canvas chart
+  function drawChart() {
+    const canvas = document.getElementById('priceChart');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width;
+    const H = rect.height;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const pad = { top: 20, right: 60, bottom: 40, left: 70 };
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+
+    // Generate data points
+    const points = [];
+    const maxInput = sliderMax();
+    const steps = 200;
+
+    for (let i = 0; i <= steps; i++) {
+      const input = (i / steps) * maxInput;
+      let price;
+      if (direction === 'buy') {
+        const newUsdt = INIT_USDT + input;
+        const newNox = K / newUsdt;
+        price = newUsdt / newNox;
+      } else {
+        const newNox = INIT_NOX + input;
+        const newUsdt = K / newNox;
+        price = newUsdt / newNox;
+      }
+      points.push({ input, price });
+    }
+
+    const maxPrice = Math.max(...points.map(p => p.price)) * 1.1;
+    const minPrice = Math.min(...points.map(p => p.price)) * 0.9;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = pad.top + (i / 5) * cH;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(pad.left + cW, y);
+      ctx.stroke();
+
+      const val = maxPrice - (i / 5) * (maxPrice - minPrice);
+      ctx.fillStyle = '#666';
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'right';
+      ctx.fillText(val < 10 ? val.toFixed(2) : Math.round(val) + '', pad.left - 10, y + 4);
+    }
+
+    // X axis labels
+    for (let i = 0; i <= 4; i++) {
+      const x = pad.left + (i / 4) * cW;
+      const val = (i / 4) * maxInput;
+      ctx.fillStyle = '#666';
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'center';
+      ctx.fillText((val / 1000000).toFixed(0) + 'M', x, H - 8);
+    }
+
+    // Gradient fill
+    const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+    if (direction === 'buy') {
+      gradient.addColorStop(0, 'rgba(34, 197, 94, 0.15)');
+      gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+    } else {
+      gradient.addColorStop(0, 'rgba(239, 68, 68, 0)');
+      gradient.addColorStop(1, 'rgba(239, 68, 68, 0.15)');
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top + cH);
+    for (const p of points) {
+      const x = pad.left + (p.input / maxInput) * cW;
+      const y = pad.top + ((maxPrice - p.price) / (maxPrice - minPrice)) * cH;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(pad.left + cW, pad.top + cH);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const x = pad.left + (p.input / maxInput) * cW;
+      const y = pad.top + ((maxPrice - p.price) / (maxPrice - minPrice)) * cH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = direction === 'buy' ? '#22C55E' : '#EF4444';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Current input marker
+    const currentAmount = parseFloat(document.getElementById('amount-input').value) || 0;
+    if (currentAmount > 0 && currentAmount <= maxInput * 2) {
+      let markerPrice;
+      if (direction === 'buy') {
+        const nu = INIT_USDT + currentAmount;
+        const nn = K / nu;
+        markerPrice = nu / nn;
+      } else {
+        const nn = INIT_NOX + currentAmount;
+        const nu = K / nn;
+        markerPrice = nu / nn;
+      }
+      const mx = pad.left + (currentAmount / maxInput) * cW;
+      const my = pad.top + ((maxPrice - markerPrice) / (maxPrice - minPrice)) * cH;
+
+      // Vertical dashed line
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(212, 168, 66, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(mx, pad.top);
+      ctx.lineTo(mx, pad.top + cH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Dot
+      ctx.beginPath();
+      ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#D4A842';
+      ctx.fill();
+      ctx.strokeStyle = '#0A0A0F';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#D4A842';
+      ctx.font = 'bold 13px JetBrains Mono';
+      ctx.textAlign = 'left';
+      const labelText = markerPrice < 10 ? markerPrice.toFixed(3) + ' U' : Math.round(markerPrice) + ' U';
+      ctx.fillText(labelText, mx + 12, my - 8);
+    }
+
+    // Axis label
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Noto Sans TC';
+    ctx.textAlign = 'center';
+    ctx.fillText(direction === 'buy' ? '進場資金 (USDT)' : '賣出數量 (NOX)', pad.left + cW / 2, H - 0);
+    ctx.save();
+    ctx.translate(14, pad.top + cH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('幣價 (U)', 0, 0);
+    ctx.restore();
+  }
+
+  // Init
+  calculate();
+  buildRefTable();
+
+  // Resize
+  window.addEventListener('resize', () => { drawChart(); });
+
+  // Scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  setTimeout(() => {
+    document.querySelectorAll('.hero, .pool-state').forEach(el => el.classList.add('visible'));
+  }, 100);
+
+  // Sync slider on input change
+  document.getElementById('amount-input').addEventListener('input', function() {
+    document.getElementById('amount-slider').value = Math.min(this.value, sliderMax());
+  });
+</script>
+
+</body>
+</html>
