@@ -360,7 +360,7 @@
       if(!j.next_page_params) break;
       const params = new URLSearchParams(j.next_page_params).toString();
       url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20&${params}`;
-      await sleep(200);
+      await sleep(80);
     }
     return items;
   }
@@ -377,14 +377,34 @@
       if(!j.next_page_params) break;
       const params = new URLSearchParams(j.next_page_params).toString();
       url = `${BS}/addresses/${address}/transactions?filter=to%7Cfrom&${params}`;
-      await sleep(200);
+      await sleep(80);
     }
     return items;
   }
 
   async function fetchNoxData(wallet) {
+    // Session cache — re-querying same wallet within tab is instant
+    const cacheKey='nox_sess_'+wallet.toLowerCase();
+    try { const c=sessionStorage.getItem(cacheKey); if(c) return JSON.parse(c); } catch(e){}
+
     const w = wallet.toLowerCase();
-    const noxItems = await fetchTokenTransfers(wallet, NOX_CA);
+
+    // Parallel fetch: NOX + USDT transfers together (eliminates N per-tx lookups)
+    const [noxItems, usdtItems] = await Promise.all([
+      fetchTokenTransfers(wallet, NOX_CA),
+      fetchTokenTransfers(wallet, USDT_CA),
+    ]);
+
+    // Build USDT index by tx hash for O(1) join — direction-aware
+    const usdtByTx={};
+    for(const item of usdtItems) {
+      if(!item.transaction_hash) continue;
+      const v=parseInt(item.total?.value||'0')/Math.pow(10,parseInt(item.total?.decimals||'6'));
+      if(v<=0) continue;
+      const h=item.transaction_hash;
+      if(!usdtByTx[h]) usdtByTx[h]=[];
+      usdtByTx[h].push({v, from:(item.from?.hash||'').toLowerCase(), to:(item.to?.hash||'').toLowerCase()});
+    }
 
     // Build basic rows
     const rows = noxItems.filter(item=>item.transaction_hash).map(item => {
@@ -397,38 +417,13 @@
       return row;
     });
 
-    // Per-tx USDT lookup in batches (only for buy/sell pool trades)
-    const BATCH=5;
-    for(let i=0;i<rows.length;i+=BATCH) {
-      await Promise.all(rows.slice(i,i+BATCH).map(async row => {
-        if(row.type==='質押'||row.type==='解質押'||row.type==='質押收益') return; // staking has no USDT
-        try {
-          // No ?type filter — it's unsupported on this endpoint and returns nothing
-          const r = await fetch(`${BS}/transactions/${row.hash}/token-transfers`);
-          if(!r.ok) return;
-          const j = await r.json();
-          const items = Array.isArray(j) ? j : (j.items||[]);
-          // Direction-aware: BUY→wallet paid USDT (from=wallet); SELL→wallet received USDT (to=wallet)
-          let found = items.find(t =>
-            (t.token?.address_hash||t.token?.address||'').toLowerCase()===USDT_CA &&
-            parseInt(t.total?.value||'0')>0 &&
-            (row.isBuy
-              ? (t.from?.hash||'').toLowerCase()===w
-              : (t.to?.hash||'').toLowerCase()===w)
-          );
-          // Fallback: any positive USDT in this tx
-          if(!found) found = items.find(t =>
-            (t.token?.address_hash||t.token?.address||'').toLowerCase()===USDT_CA &&
-            parseInt(t.total?.value||'0')>0
-          );
-          if(found) {
-            const v = parseInt(found.total.value) / Math.pow(10, parseInt(found.total?.decimals||'6'));
-            row.usdtAmt = v;
-            row.price   = row.noxAmt>0 ? v/row.noxAmt : null;
-          }
-        } catch(e) {}
-      }));
-      if(i+BATCH<rows.length) await sleep(150);
+    // Join USDT amounts — zero extra API calls
+    for(const row of rows) {
+      if(row.type==='質押'||row.type==='解質押'||row.type==='質押收益') continue;
+      const candidates=usdtByTx[row.hash]||[];
+      // Direction-aware: BUY→wallet paid USDT (from=wallet); SELL→wallet received USDT (to=wallet)
+      const found=candidates.find(t=>row.isBuy?t.from===w:t.to===w)||candidates[0];
+      if(found) { row.usdtAmt=found.v; row.price=row.noxAmt>0?found.v/row.noxAmt:null; }
     }
 
     // Reclassify 轉入/轉出 that turned out to have USDT → they're swaps from unknown pools
@@ -452,7 +447,7 @@
     const netStakeNox = totalStakeNox - totalUnstakeNox;
     const stakeRate = totalBuyNox>0 && netStakeNox>0 ? netStakeNox/totalBuyNox : null;
 
-    return {
+    const result = {
       rows, buyCount, sellCount,
       totalBuyNox, totalBuyUsdt, totalSellNox, totalSellUsdt,
       totalStakeNox, totalUnstakeNox, netStakeNox, stakeRate,
@@ -461,6 +456,8 @@
       netNox,
       netUsdt: totalSellUsdt-totalBuyUsdt,
     };
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e){}
+    return result;
   }
 
   function buildTxTable(rows, tableId='') {
@@ -664,13 +661,12 @@
       document.getElementById('related-count').textContent=related.length+' 個';
       const listEl=document.getElementById('related-list');
 
+      // Create all cards first (loading state), then fetch in parallel
       for(let i=0;i<related.length;i++) {
         const {addr,flow}=related[i];
-        progressEl.textContent=`查詢關聯錢包 ${i+1}/${related.length}：${shortAddr(addr)}…`;
         const cid='rc'+i;
         const flowLbl=flow==='in'?'⬇ 匯入':flow==='out'?'⬆ 匯出':'↕ 雙向';
         const flowCls=flow==='in'?'flow-in':flow==='out'?'flow-out':'flow-both';
-
         const card=document.createElement('div');
         card.className='related-card'; card.id='card-'+cid;
         card.innerHTML=`
@@ -686,8 +682,12 @@
             <div class="loading-state" style="padding:20px"><div class="spinner"></div></div>
           </div>`;
         listEl.appendChild(card);
+      }
 
-        await sleep(400);
+      // Parallel fetch — total time = slowest wallet, not sum of all
+      progressEl.textContent=`並行查詢 ${related.length} 個關聯錢包中…`;
+      await Promise.allSettled(related.map(async ({addr},i) => {
+        const cid='rc'+i;
         try {
           const rd=await fetchNoxData(addr);
           const parts=[];
@@ -700,7 +700,7 @@
           document.getElementById('rsummary-'+cid).textContent='查詢失敗';
           document.getElementById('rb-'+cid).innerHTML=`<div class="error-state" style="padding:16px"><p>⚠️ ${e.message}</p></div>`;
         }
-      }
+      }));
 
       progressEl.style.display='none';
       buildGraph(wallet, related);
