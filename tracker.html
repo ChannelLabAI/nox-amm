@@ -121,6 +121,21 @@
     .search-row { flex-direction:column; }
     .search-btn { width:100%; }
   }
+
+  /* ── Wallet Notes ── */
+  .note-row { display:none; align-items:center; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .note-label { font-size:12px; color:var(--text-secondary); white-space:nowrap; }
+  .note-display { font-size:13px; color:var(--gold); font-weight:600; flex:1; min-width:0; }
+  .note-empty { font-size:13px; color:var(--text-secondary); font-style:italic; flex:1; }
+  .note-input { flex:1; min-width:160px; padding:7px 12px; background:var(--bg-input); border:1px solid var(--border-focus); border-radius:8px; color:var(--text-primary); font-size:13px; outline:none; }
+  .note-btn { padding:6px 14px; border-radius:8px; border:1px solid rgba(212,168,66,0.4); background:transparent; color:var(--gold); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .note-btn:hover { background:rgba(212,168,66,0.12); }
+  .note-btn.save { background:rgba(212,168,66,0.15); border-color:var(--gold); }
+  .note-btn.cancel { border-color:var(--border); color:var(--text-secondary); }
+  .note-btn.cancel:hover { background:rgba(255,255,255,0.05); }
+  .note-chip { display:inline-flex; align-items:center; gap:4px; background:rgba(212,168,66,0.1); border:1px solid rgba(212,168,66,0.25); border-radius:12px; padding:2px 8px; font-size:11px; color:var(--gold); font-weight:600; font-family:'Noto Sans TC',sans-serif; white-space:nowrap; }
+  .note-edit-inline { padding:2px 7px; border-radius:5px; border:1px solid rgba(212,168,66,0.3); background:transparent; color:var(--text-secondary); font-size:10px; cursor:pointer; transition:all 0.15s; margin-left:4px; }
+  .note-edit-inline:hover { color:var(--gold); border-color:var(--gold); }
 </style>
 </head>
 <body>
@@ -136,6 +151,14 @@
     <div class="search-row">
       <input class="search-input" id="wallet-input" type="text" placeholder="輸入錢包地址，例如 0xABCD...1234">
       <button class="search-btn" id="search-btn" onclick="search()">查詢</button>
+    </div>
+    <div class="note-row" id="main-note-row" data-addr="">
+      <span class="note-label">備注</span>
+      <span id="main-note-chip"></span>
+      <input class="note-input" id="main-note-input" style="display:none" placeholder="輸入備注…" onkeydown="if(event.key==='Enter')saveMainNote();if(event.key==='Escape')cancelMainNote()">
+      <button class="note-btn" id="main-note-edit-btn" onclick="startMainNoteEdit()">✏️ 備注</button>
+      <button class="note-btn save" id="main-note-save-btn" style="display:none" onclick="saveMainNote()">儲存</button>
+      <button class="note-btn cancel" id="main-note-cancel-btn" style="display:none" onclick="cancelMainNote()">取消</button>
     </div>
   </div>
 
@@ -220,6 +243,90 @@
 
   function shortAddr(addr) { return addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '—'; }
   function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+  // ── Wallet Notes (localStorage) ──────────────────────────────────────
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function getNote(addr) { return localStorage.getItem('nox_note_'+addr.toLowerCase())||''; }
+  function setNote(addr, note) {
+    const k='nox_note_'+addr.toLowerCase();
+    if(note.trim()) localStorage.setItem(k,note.trim()); else localStorage.removeItem(k);
+  }
+
+  function showMainNoteRow(addr) {
+    const row=document.getElementById('main-note-row');
+    row.dataset.addr=addr.toLowerCase();
+    row.style.display='flex';
+    refreshMainNoteUI();
+  }
+
+  function refreshMainNoteUI() {
+    const row=document.getElementById('main-note-row');
+    const addr=row.dataset.addr;
+    const note=getNote(addr);
+    const chip=document.getElementById('main-note-chip');
+    chip.style.display='';
+    chip.innerHTML=note?`<span class="note-chip">${escHtml(note)}</span>`:`<span class="note-empty">尚未備注</span>`;
+    document.getElementById('main-note-input').style.display='none';
+    document.getElementById('main-note-edit-btn').style.display='';
+    document.getElementById('main-note-save-btn').style.display='none';
+    document.getElementById('main-note-cancel-btn').style.display='none';
+  }
+
+  function startMainNoteEdit() {
+    const row=document.getElementById('main-note-row');
+    const input=document.getElementById('main-note-input');
+    input.value=getNote(row.dataset.addr);
+    input.style.display='';
+    document.getElementById('main-note-chip').style.display='none';
+    document.getElementById('main-note-edit-btn').style.display='none';
+    document.getElementById('main-note-save-btn').style.display='';
+    document.getElementById('main-note-cancel-btn').style.display='';
+    input.focus();
+  }
+
+  function saveMainNote() {
+    const row=document.getElementById('main-note-row');
+    setNote(row.dataset.addr, document.getElementById('main-note-input').value);
+    refreshMainNoteUI();
+    updateGraphNodeLabel(row.dataset.addr);
+  }
+
+  function cancelMainNote() { refreshMainNoteUI(); }
+
+  function noteInlineHtml(addr) {
+    const note=getNote(addr);
+    const esc=escHtml(addr);
+    return note
+      ?`<span class="note-chip">${escHtml(note)}</span><button class="note-edit-inline" onclick="openInlineNoteEdit(event,'${esc}')">✏️</button>`
+      :`<button class="note-edit-inline" onclick="openInlineNoteEdit(event,'${esc}')">＋ 備注</button>`;
+  }
+
+  function openInlineNoteEdit(e,addr) {
+    e.stopPropagation();
+    const c=e.target.closest('.note-inline-container');
+    if(!c) return;
+    const ea=escHtml(addr);
+    c.innerHTML=`<input class="note-input" style="max-width:180px;padding:4px 8px;font-size:12px" placeholder="備注…" value="${escHtml(getNote(addr))}" onkeydown="if(event.key==='Enter')saveInlineNote(event,'${ea}');if(event.key==='Escape')cancelInlineNote(event,'${ea}')"><button class="note-btn save" style="padding:4px 10px;font-size:11px" onclick="saveInlineNote(event,'${ea}')">儲存</button><button class="note-btn cancel" style="padding:4px 10px;font-size:11px" onclick="cancelInlineNote(event,'${ea}')">取消</button>`;
+    c.querySelector('input').focus();
+  }
+
+  function saveInlineNote(e,addr) {
+    e.stopPropagation();
+    const c=e.target.closest('.note-inline-container');
+    setNote(addr,c.querySelector('input').value);
+    c.innerHTML=noteInlineHtml(addr);
+    updateGraphNodeLabel(addr);
+  }
+
+  function cancelInlineNote(e,addr) {
+    e.stopPropagation();
+    e.target.closest('.note-inline-container').innerHTML=noteInlineHtml(addr);
+  }
+
+  function updateGraphNodeLabel(addr) {
+    if(!_visNetwork) return;
+    try { _visNetwork.body.data.nodes.update({id:addr, label:getNote(addr)||shortAddr(addr)}); } catch(ex) {}
+  }
 
   function classifyTx(row) {
     const from = row.fromAddr;
@@ -451,13 +558,13 @@
 
     const mainShort = shortAddr(mainWallet);
     const nodes = new vis.DataSet([
-      { id: mainWallet, label: mainShort, shape:'dot', size:28,
+      { id: mainWallet, label: getNote(mainWallet)||mainShort, shape:'dot', size:28,
         color:{ background:'#D4A842', border:'#F0D68A', highlight:{background:'#F0D68A',border:'#D4A842'} },
         font:{ color:'#0A0A0F', size:13, bold:true } },
       ...related.map(r => {
         const bg = r.flow==='in'?'#22C55E': r.flow==='out'?'#EF4444':'#8B5CF6';
         const bd = r.flow==='in'?'#86EFAC': r.flow==='out'?'#FCA5A5':'#C4B5FD';
-        return { id:r.addr, label:shortAddr(r.addr), shape:'dot', size:18,
+        return { id:r.addr, label:getNote(r.addr)||shortAddr(r.addr), shape:'dot', size:18,
           color:{background:bg, border:bd, highlight:{background:bd,border:bg}},
           font:{color:'#EEEEF0', size:12} };
       })
@@ -507,6 +614,7 @@
     document.getElementById('stats-section').style.display='none';
     document.getElementById('related-card').style.display='none';
     document.getElementById('graph-section').style.display='none';
+    document.getElementById('main-note-row').style.display='none';
     document.getElementById('tx-count').style.display='none';
     document.getElementById('main-table-title').textContent='交易紀錄';
     document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
@@ -515,6 +623,7 @@
       const d = await fetchNoxData(wallet);
 
       document.getElementById('main-table-title').textContent=`${shortAddr(wallet)} 交易紀錄`;
+      showMainNoteRow(wallet);
 
       if(!d.rows.length) {
         document.getElementById('table-body').innerHTML='<div class="empty-state"><div class="icon">📭</div><p>此地址沒有 NOX 交易紀錄</p></div>';
@@ -568,6 +677,7 @@
           <div class="related-header" onclick="toggleRelated('${cid}')">
             <span class="flow-badge ${flowCls}">${flowLbl}</span>
             <span class="related-addr">${addr}</span>
+            <span class="note-inline-container" data-addr="${addr}">${noteInlineHtml(addr)}</span>
             <span class="related-summary" id="rsummary-${cid}">查詢中…</span>
             <button class="drill-btn" onclick="event.stopPropagation();drillInto('${addr}')" title="切換為主查錢包">🔍 查詢</button>
             <span class="related-expand" id="arrow-${cid}">▶</span>
