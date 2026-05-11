@@ -49,6 +49,8 @@
   .search-input::placeholder { color:var(--text-secondary); }
   .search-btn { padding:14px 28px; background:linear-gradient(135deg,var(--gold-dark),var(--gold)); border:none; border-radius:12px; color:#0A0A0F; font-family:'Noto Sans TC',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:opacity 0.2s; white-space:nowrap; }
   .search-btn:hover { opacity:0.9; } .search-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .refresh-btn { padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:transparent; color:var(--text-secondary); font-size:16px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  .refresh-btn:hover { border-color:var(--gold); color:var(--gold); }
 
   .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
   .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center; }
@@ -184,6 +186,7 @@
     <div class="search-row">
       <input class="search-input" id="wallet-input" type="text" placeholder="輸入錢包地址，例如 0xABCD...1234">
       <button class="search-btn" id="search-btn" onclick="search()">查詢</button>
+      <button class="refresh-btn" id="refresh-btn" onclick="refreshSearch()" style="display:none" title="清除快取重新查詢">🔄</button>
     </div>
     <div class="note-row" id="main-note-row" data-addr="">
       <span class="note-label">備注</span>
@@ -452,7 +455,7 @@
   async function fetchNoxData(wallet) {
     // Session cache — re-querying same wallet within tab is instant
     const cacheKey='nox_sess_'+wallet.toLowerCase();
-    try { const c=sessionStorage.getItem(cacheKey); if(c) return JSON.parse(c); } catch(e){}
+    try { const c=sessionStorage.getItem(cacheKey); if(c){ const p=JSON.parse(c); if(Date.now()-p.ts<180000) return p.data; } } catch(e){}
 
     const w = wallet.toLowerCase();
 
@@ -523,7 +526,7 @@
       netNox,
       netUsdt: totalSellUsdt-totalBuyUsdt,
     };
-    try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e){}
+    try { sessionStorage.setItem(cacheKey, JSON.stringify({data:result, ts:Date.now()})); } catch(e){}
     return result;
   }
 
@@ -729,6 +732,12 @@
     section.style.display='block';
   }
 
+  function refreshSearch() {
+    const wallet = document.getElementById('wallet-input').value.trim().toLowerCase();
+    if(wallet) sessionStorage.removeItem('nox_sess_'+wallet);
+    search();
+  }
+
   async function search() {
     const wallet=document.getElementById('wallet-input').value.trim().toLowerCase();
     if(!wallet||!wallet.startsWith('0x')||wallet.length!==42){ alert('請輸入有效的錢包地址'); return; }
@@ -743,6 +752,7 @@
     document.getElementById('main-note-row').style.display='none';
     document.getElementById('tx-count').style.display='none';
     document.getElementById('export-btn').style.display='none';
+    document.getElementById('refresh-btn').style.display='none';
     document.getElementById('main-table-title').textContent='交易紀錄';
     document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
 
@@ -758,6 +768,7 @@
         const ce=document.getElementById('tx-count');
         ce.textContent=d.rows.length+' 筆'; ce.style.display='inline-block';
         document.getElementById('export-btn').style.display='';
+        document.getElementById('refresh-btn').style.display='';
         document.getElementById('s-buy-count').textContent=d.buyCount;
         document.getElementById('s-buy-usdt').textContent=fmt(d.totalBuyUsdt,2)+' USDT';
         document.getElementById('s-sell-count').textContent=d.sellCount;
