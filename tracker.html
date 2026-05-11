@@ -117,7 +117,6 @@
 
   @media (max-width:768px) {
     .stats-grid { grid-template-columns:repeat(2,1fr); }
-    .stats-grid .stat-card:last-child { grid-column:span 2; }
     .search-row { flex-direction:column; }
     .search-btn { width:100%; }
   }
@@ -140,6 +139,11 @@
   /* ── Settings Modal ── */
   .settings-btn { background:none; border:1px solid rgba(139,92,246,0.4); border-radius:8px; color:var(--purple); font-size:14px; padding:5px 10px; cursor:pointer; transition:all 0.15s; margin-left:10px; vertical-align:middle; }
   .settings-btn:hover { background:rgba(139,92,246,0.12); border-color:var(--purple); }
+  .modal-close-btn { position:absolute; top:16px; right:18px; background:none; border:none; font-size:20px; color:var(--text-secondary); cursor:pointer; line-height:1; }
+  .modal-close-btn:hover { color:var(--text-primary); }
+  .modal-box { position:relative; }
+  .copy-btn { padding:2px 7px; border-radius:5px; border:1px solid rgba(212,168,66,0.3); background:transparent; color:var(--text-secondary); font-size:11px; cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+  .copy-btn:hover { color:var(--gold); border-color:var(--gold); }
   .mode-badge { display:inline-block; padding:3px 14px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); border-radius:50px; font-size:11px; color:var(--green); font-weight:600; letter-spacing:1px; margin-top:10px; }
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
   .modal-overlay.open { display:flex; }
@@ -190,8 +194,7 @@
       <div class="stat-card"><div class="stat-label">持有 NOX（估）</div><div class="stat-value gold" id="s-net-nox">—</div><div class="stat-sub" id="s-net-usdt">—</div></div>
       <div class="stat-card"><div class="stat-label">均買價</div><div class="stat-value" id="s-avg-buy">—</div><div class="stat-sub">USDT/NOX</div></div>
       <div class="stat-card"><div class="stat-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub">USDT/NOX</div></div>
-      <div class="stat-card"><div class="stat-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub">質押-解質押 NOX</div></div>
-      <div class="stat-card" style="border-color:rgba(139,92,246,0.3)"><div class="stat-label">質押率</div><div class="stat-value" style="color:var(--purple)" id="s-stake-rate">—</div><div class="stat-sub">(質押-解質押) ÷ 買入</div></div>
+      <div class="stat-card"><div class="stat-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub" id="s-stake-sub">質押-解質押 NOX</div></div>
     </div>
   </div>
 
@@ -539,6 +542,13 @@
     document.querySelectorAll('#main-tx-table tr[data-type]').forEach(tr=>{
       tr.style.display = (type==='全部' || tr.dataset.type===type) ? '' : 'none';
     });
+    const total=window._txTotal||0;
+    const ce=document.getElementById('tx-count');
+    if(type==='全部') { ce.textContent=total+' 筆'; }
+    else {
+      const visible=document.querySelectorAll('#main-tx-table tr[data-type]:not([style*="none"])').length;
+      ce.textContent=`${visible} / ${total} 筆`;
+    }
   }
 
   async function findRelatedWallets(mainWallet, noxRows=[]) {
@@ -652,6 +662,7 @@
   async function search() {
     const wallet=document.getElementById('wallet-input').value.trim().toLowerCase();
     if(!wallet||!wallet.startsWith('0x')||wallet.length!==42){ alert('請輸入有效的錢包地址'); return; }
+    history.replaceState(null,'',`?a=${wallet}`);
 
     const btn=document.getElementById('search-btn');
     btn.disabled=true; btn.textContent='查詢中…';
@@ -683,8 +694,9 @@
         document.getElementById('s-avg-buy').textContent=d.avgBuy?fmt(d.avgBuy,4):'—';
         document.getElementById('s-avg-sell').textContent=d.avgSell?fmt(d.avgSell,4):'—';
         document.getElementById('s-stake-nox').textContent=fmt(d.netStakeNox,0)+' NOX';
-        document.getElementById('s-stake-rate').textContent=d.stakeRate!=null?fmt(d.stakeRate*100,1)+'%':'—';
+        document.getElementById('s-stake-sub').textContent=d.stakeRate!=null?'佔買入 '+fmt(d.stakeRate*100,1)+'%':'質押-解質押 NOX';
         document.getElementById('stats-section').style.display='block';
+        window._txTotal=d.rows.length;
         document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
       }
 
@@ -720,6 +732,7 @@
           <div class="related-header" onclick="toggleRelated('${cid}')">
             <span class="flow-badge ${flowCls}">${flowLbl}</span>
             <span class="related-addr">${addr}</span>
+            <button class="copy-btn" id="copy-${cid}" onclick="event.stopPropagation();copyAddr('${addr}','copy-${cid}')" title="複製地址">⎘</button>
             <span class="note-inline-container" data-addr="${addr}">${noteInlineHtml(addr)}</span>
             <span class="related-summary" id="rsummary-${cid}">查詢中…</span>
             <button class="drill-btn" onclick="event.stopPropagation();drillInto('${addr}')" title="切換為主查錢包">🔍 查詢</button>
@@ -733,6 +746,7 @@
 
       // Parallel fetch — total time = slowest wallet, not sum of all
       progressEl.textContent=`並行查詢 ${related.length} 個關聯錢包中…`;
+      let completedCount=0;
       await Promise.allSettled(related.map(async ({addr},i) => {
         const cid='rc'+i;
         try {
@@ -747,6 +761,8 @@
           document.getElementById('rsummary-'+cid).textContent='查詢失敗';
           document.getElementById('rb-'+cid).innerHTML=`<div class="error-state" style="padding:16px"><p>⚠️ ${e.message}</p></div>`;
         }
+        const done=++completedCount;
+        document.getElementById('related-count').textContent=done<related.length?`已完成 ${done}/${related.length}`:`${related.length} 個`;
       }));
 
       progressEl.style.display='none';
@@ -792,14 +808,29 @@
     updateModeBadge();
   }
 
+  function copyAddr(addr, btnId) {
+    navigator.clipboard.writeText(addr).then(()=>{
+      const btn=document.getElementById(btnId);
+      if(!btn) return;
+      btn.textContent='✓';
+      setTimeout(()=>{ btn.textContent='⎘'; },1500);
+    });
+  }
+
   document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('wallet-input').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
     updateModeBadge();
+    const a=new URLSearchParams(location.search).get('a');
+    if(a&&a.startsWith('0x')&&a.length===42){
+      document.getElementById('wallet-input').value=a;
+      search();
+    }
   });
 </script>
 
 <div class="modal-overlay" id="settings-modal" onclick="if(event.target===this)closeSettings()">
   <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeSettings()">×</button>
     <div class="modal-title">API 設定</div>
     <input class="modal-input" id="arbiscan-key-input" type="text" placeholder="Arbiscan API Key（可選，加速查詢）">
     <div class="modal-actions">
