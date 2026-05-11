@@ -120,6 +120,11 @@
     .stats-grid { grid-template-columns:repeat(2,1fr); }
     .search-row { flex-direction:column; }
     .search-btn { width:100%; }
+    .tx-table { min-width:unset; }
+    .tx-table th:nth-child(5), .tx-table td:nth-child(5),
+    .tx-table th:nth-child(6), .tx-table td:nth-child(6) { display:none; }
+    .related-body .tx-table th:nth-child(5), .related-body .tx-table td:nth-child(5),
+    .related-body .tx-table th:nth-child(6), .related-body .tx-table td:nth-child(6) { display:none; }
   }
 
   /* ── Wallet Notes ── */
@@ -158,6 +163,8 @@
   .modal-clear-btn { padding:11px 18px; background:transparent; border:1px solid var(--border); border-radius:10px; color:var(--text-secondary); font-family:'Noto Sans TC',sans-serif; font-size:14px; cursor:pointer; transition:all 0.15s; }
   .modal-clear-btn:hover { border-color:var(--red); color:var(--red); }
   .modal-status { margin-top:12px; font-size:12px; color:var(--text-secondary); text-align:center; min-height:18px; }
+  .export-btn { padding:5px 14px; border-radius:8px; border:1px solid rgba(212,168,66,0.3); background:transparent; color:var(--gold); font-family:'Noto Sans TC',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+  .export-btn:hover { background:rgba(212,168,66,0.12); border-color:var(--gold); }
 </style>
 </head>
 <body>
@@ -211,6 +218,7 @@
     <div class="section-header">
       <h2 id="main-table-title">交易紀錄</h2>
       <span class="count-badge" id="tx-count" style="display:none"></span>
+      <button class="export-btn" id="export-btn" onclick="exportCsv()" style="display:none">⬇ 匯出 CSV</button>
     </div>
     <div id="table-body">
       <div class="empty-state"><div class="icon">🔍</div><p>輸入錢包地址查詢 NOX 交易紀錄</p></div>
@@ -668,6 +676,19 @@
     else { body.classList.add('open'); arrow.textContent='▼'; }
   }
 
+  function exportCsv() {
+    const rows = [...document.querySelectorAll('#main-tx-table tr[data-type]')]
+      .filter(tr => tr.style.display !== 'none')
+      .map(tr => [...tr.querySelectorAll('td')].map(td => `"${td.innerText.replace(/"/g,'""')}"`).join(','));
+    const header = '"時間","類型","NOX數量","USDT金額","單價","交易Hash"';
+    const csv = '﻿' + header + '\n' + rows.join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    const addr = document.getElementById('main-note-row').dataset.addr || 'wallet';
+    a.download = `nox-txs-${shortAddr(addr)}.csv`;
+    a.click();
+  }
+
   let _priceChart = null;
   function buildPriceChart(rows) {
     const section = document.getElementById('price-chart-section');
@@ -721,6 +742,7 @@
     document.getElementById('graph-section').style.display='none';
     document.getElementById('main-note-row').style.display='none';
     document.getElementById('tx-count').style.display='none';
+    document.getElementById('export-btn').style.display='none';
     document.getElementById('main-table-title').textContent='交易紀錄';
     document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
 
@@ -735,6 +757,7 @@
       } else {
         const ce=document.getElementById('tx-count');
         ce.textContent=d.rows.length+' 筆'; ce.style.display='inline-block';
+        document.getElementById('export-btn').style.display='';
         document.getElementById('s-buy-count').textContent=d.buyCount;
         document.getElementById('s-buy-usdt').textContent=fmt(d.totalBuyUsdt,2)+' USDT';
         document.getElementById('s-sell-count').textContent=d.sellCount;
