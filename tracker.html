@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NOX 持倉追蹤器</title>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -196,6 +197,14 @@
       <div class="stat-card"><div class="stat-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub">USDT/NOX</div></div>
       <div class="stat-card"><div class="stat-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub" id="s-stake-sub">質押-解質押 NOX</div></div>
     </div>
+  </div>
+
+  <div class="section-card" id="price-chart-section" style="display:none">
+    <div class="section-header">
+      <h2>買賣價格走勢</h2>
+      <span style="font-size:12px;color:var(--text-secondary)">只顯示有 USDT 成交的筆數</span>
+    </div>
+    <canvas id="price-chart" height="200"></canvas>
   </div>
 
   <div class="section-card">
@@ -659,6 +668,46 @@
     else { body.classList.add('open'); arrow.textContent='▼'; }
   }
 
+  let _priceChart = null;
+  function buildPriceChart(rows) {
+    const section = document.getElementById('price-chart-section');
+    _priceChart?.destroy();
+    const tradeRows = rows.filter(r => r.usdtAmt && r.price && (r.type==='買'||r.type==='賣'))
+                         .sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+    if(!tradeRows.length){ section.style.display='none'; return; }
+
+    const fmtD = ts => new Date(ts).toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'2-digit',day:'2-digit'});
+    const labels = tradeRows.map(r=>fmtD(r.ts));
+
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    _priceChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          { label:'買入', data: tradeRows.filter(r=>r.type==='買') .map(r=>({x:tradeRows.indexOf(r), y:r.price})), backgroundColor:'#22C55E', borderColor:'#22C55E', pointRadius:6 },
+          { label:'賣出', data: tradeRows.filter(r=>r.type==='賣').map(r=>({x:tradeRows.indexOf(r), y:r.price})), backgroundColor:'#EF4444', borderColor:'#EF4444', pointRadius:6 },
+        ]
+      },
+      options: {
+        responsive:true,
+        plugins: {
+          legend:{ labels:{ color:'#9999AA' } },
+          tooltip:{ callbacks:{
+            label: ctx => {
+              const r = tradeRows[ctx.parsed.x];
+              return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(4)} USDT/NOX (${r ? fmtD(r.ts) : ''})`;
+            }
+          }}
+        },
+        scales: {
+          x: { ticks:{ color:'#9999AA', callback:(v)=>labels[v]||'', maxTicksLimit:8 }, grid:{color:'rgba(255,255,255,0.05)'} },
+          y: { ticks:{color:'#9999AA'}, grid:{color:'rgba(255,255,255,0.05)'}, title:{display:true,text:'USDT/NOX',color:'#9999AA'} }
+        }
+      }
+    });
+    section.style.display='block';
+  }
+
   async function search() {
     const wallet=document.getElementById('wallet-input').value.trim().toLowerCase();
     if(!wallet||!wallet.startsWith('0x')||wallet.length!==42){ alert('請輸入有效的錢包地址'); return; }
@@ -667,6 +716,7 @@
     const btn=document.getElementById('search-btn');
     btn.disabled=true; btn.textContent='查詢中…';
     document.getElementById('stats-section').style.display='none';
+    document.getElementById('price-chart-section').style.display='none';
     document.getElementById('related-card').style.display='none';
     document.getElementById('graph-section').style.display='none';
     document.getElementById('main-note-row').style.display='none';
@@ -696,6 +746,7 @@
         document.getElementById('s-stake-nox').textContent=fmt(d.netStakeNox,0)+' NOX';
         document.getElementById('s-stake-sub').textContent=d.stakeRate!=null?'佔買入 '+fmt(d.stakeRate*100,1)+'%':'質押-解質押 NOX';
         document.getElementById('stats-section').style.display='block';
+        buildPriceChart(d.rows);
         window._txTotal=d.rows.length;
         document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
       }
