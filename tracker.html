@@ -390,41 +390,53 @@
          : 'var(--text-primary)';
   }
 
-  async function fetchTransfersArbiscan(address, tokenContract, apiKey) {
-    const url = `https://api.arbiscan.io/api?module=account&action=tokentx&address=${address}&contractaddress=${tokenContract}&startblock=0&endblock=99999999&page=1&offset=10000&sort=desc&apikey=${apiKey}`;
-    const r = await fetch(url);
-    if(!r.ok) return [];
-    const j = await r.json();
-    if(j.status !== '1') return [];
-    return (j.result||[]).map(item => ({
-      transaction_hash: item.hash,
-      timestamp: new Date(parseInt(item.timeStamp)*1000).toISOString(),
-      from: { hash: item.from.toLowerCase() },
-      to:   { hash: item.to.toLowerCase() },
-      total: { value: item.value, decimals: item.tokenDecimal },
-    }));
+  async function fetchTransfersArbiscan(address, tokenContract, apiKey, onProgress) {
+    const allItems = [];
+    let page = 1;
+    while(page <= 10) {
+      const url = `https://api.arbiscan.io/api?module=account&action=tokentx&address=${address}&contractaddress=${tokenContract}&startblock=0&endblock=99999999&page=${page}&offset=10000&sort=desc&apikey=${apiKey}`;
+      const r = await fetch(url);
+      if(!r.ok) break;
+      const j = await r.json();
+      if(j.status !== '1') break;
+      const batch = (j.result||[]).map(item => ({
+        transaction_hash: item.hash,
+        timestamp: new Date(parseInt(item.timeStamp)*1000).toISOString(),
+        from: { hash: item.from.toLowerCase() },
+        to:   { hash: item.to.toLowerCase() },
+        total: { value: item.value, decimals: item.tokenDecimal },
+      }));
+      allItems.push(...batch);
+      if(onProgress) onProgress(allItems.length);
+      if(batch.length < 10000) break;
+      page++;
+    }
+    return allItems;
   }
 
-  async function fetchTransfersBlockscout(address, tokenContract, maxPages=6) {
+  async function fetchTransfersBlockscout(address, tokenContract, onProgress) {
     const items = [];
     let url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20`;
-    for(let p=0; p<maxPages; p++) {
+    let page = 0;
+    while(page < 100) {
       const r = await fetch(url);
       if(!r.ok) break;
       const j = await r.json();
       items.push(...(j.items||[]));
+      if(onProgress) onProgress(items.length);
       if(!j.next_page_params) break;
       const params = new URLSearchParams(j.next_page_params).toString();
       url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20&${params}`;
       await sleep(80);
+      page++;
     }
     return items;
   }
 
-  async function fetchTokenTransfers(address, tokenContract, maxPages=6) {
+  async function fetchTokenTransfers(address, tokenContract, onProgress) {
     const key = getArbiscanKey();
-    if(key) return fetchTransfersArbiscan(address, tokenContract, key);
-    return fetchTransfersBlockscout(address, tokenContract, maxPages);
+    if(key) return fetchTransfersArbiscan(address, tokenContract, key, onProgress);
+    return fetchTransfersBlockscout(address, tokenContract, onProgress);
   }
 
   // Fetch normal transactions to find related wallets
@@ -444,7 +456,7 @@
     return items;
   }
 
-  async function fetchNoxData(wallet) {
+  async function fetchNoxData(wallet, onProgress) {
     // Session cache — re-querying same wallet within tab is instant
     const cacheKey='nox_sess_'+wallet.toLowerCase();
     try { const c=sessionStorage.getItem(cacheKey); if(c){ const p=JSON.parse(c); if(Date.now()-p.ts<180000) return p.data; } } catch(e){}
@@ -452,8 +464,9 @@
     const w = wallet.toLowerCase();
 
     // Parallel fetch: NOX + USDT transfers together (eliminates N per-tx lookups)
+    // onProgress passed to NOX fetch only (main signal); USDT fetch runs silently
     const [noxItems, usdtItems] = await Promise.all([
-      fetchTokenTransfers(wallet, NOX_CA),
+      fetchTokenTransfers(wallet, NOX_CA, onProgress),
       fetchTokenTransfers(wallet, USDT_CA),
     ]);
 
@@ -706,10 +719,14 @@
     document.getElementById('export-btn').style.display='none';
     document.getElementById('refresh-btn').style.display='none';
     document.getElementById('main-table-title').textContent='交易紀錄';
-    document.getElementById('table-body').innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
+    const _tb = document.getElementById('table-body');
+    _tb.innerHTML='<div class="loading-state"><div><div class="spinner"></div></div><p>正在查詢主錢包…</p></div>';
+    const _onProgress = (n) => {
+      _tb.innerHTML=`<div class="loading-state"><div><div class="spinner"></div></div><p>已載入 ${n} 筆，繼續…</p></div>`;
+    };
 
     try {
-      const d = await fetchNoxData(wallet);
+      const d = await fetchNoxData(wallet, _onProgress);
 
       document.getElementById('main-table-title').textContent=`${shortAddr(wallet)} 交易紀錄`;
       showMainNoteRow(wallet);
