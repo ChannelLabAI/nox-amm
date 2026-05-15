@@ -362,6 +362,26 @@
   canvas {
     width: 100% !important;
     height: 100% !important;
+    cursor: grab;
+  }
+  canvas.dragging { cursor: grabbing; }
+  #chart-reset-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #888;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #chart-reset-btn:hover { background: rgba(255,255,255,0.15); color: #ccc; }
+  .pool-stat-note {
+    font-size: 10px;
+    color: #D4A842;
+    margin-top: 2px;
   }
 
   /* Reference table */
@@ -495,19 +515,19 @@
   <div class="pool-state fade-in">
     <div class="pool-stat">
       <div class="pool-stat-label">NOX 池量 (x)</div>
-      <div class="pool-stat-value">1,151,799<span class="unit">NOX</span></div>
+      <div class="pool-stat-value" id="pool-nox-val">載入中…</div>
     </div>
     <div class="pool-stat">
       <div class="pool-stat-label">USDT 池量 (y)</div>
-      <div class="pool-stat-value">888,943<span class="unit">U</span></div>
+      <div class="pool-stat-value" id="pool-usdt-val">載入中…</div>
     </div>
     <div class="pool-stat">
       <div class="pool-stat-label">當前價格</div>
-      <div class="pool-stat-value">0.7717<span class="unit">U</span></div>
+      <div class="pool-stat-value" id="pool-price-val">載入中…</div>
     </div>
     <div class="pool-stat">
       <div class="pool-stat-label">流動性 k</div>
-      <div class="pool-stat-value" style="font-size:15px">1.024T</div>
+      <div class="pool-stat-value" id="pool-k-val" style="font-size:15px">載入中…</div>
     </div>
   </div>
 
@@ -570,6 +590,7 @@
     <h2>價格影響曲線</h2>
     <div class="chart-container">
       <canvas id="priceChart"></canvas>
+      <button id="chart-reset-btn" onclick="resetChartView()" title="重置視圖">重置</button>
     </div>
   </section>
 
@@ -606,11 +627,54 @@
 </div>
 
 <script>
-  // Pool constants
-  const INIT_NOX = 1151799;
-  const INIT_USDT = 888943;
-  const K = INIT_NOX * INIT_USDT;
-  const INIT_PRICE = INIT_USDT / INIT_NOX;
+  // Pool constants (let — updated by loadPoolData)
+  const POOL_CA = '0xd3211dcd145990f740f8607fb0364080d718e3e3';
+  const NOX_CA_POOL  = '0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55';
+  const USDT_CA_POOL = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
+  const BS_API = 'https://arbitrum.blockscout.com/api/v2';
+
+  let INIT_NOX = 1151799;
+  let INIT_USDT = 888943;
+  let K = INIT_NOX * INIT_USDT;
+  let INIT_PRICE = INIT_USDT / INIT_NOX;
+
+  function fmtPoolK(v) {
+    if (v >= 1e12) return (v/1e12).toFixed(3) + 'T';
+    if (v >= 1e9)  return (v/1e9).toFixed(2) + 'B';
+    return (v/1e6).toFixed(1) + 'M';
+  }
+
+  function updatePoolCards(note) {
+    document.getElementById('pool-nox-val').innerHTML  = Number(INIT_NOX).toLocaleString() + '<span class="unit">NOX</span>' + (note ? `<div class="pool-stat-note">${note}</div>` : '');
+    document.getElementById('pool-usdt-val').innerHTML = Number(INIT_USDT).toLocaleString() + '<span class="unit">U</span>' + (note ? `<div class="pool-stat-note">${note}</div>` : '');
+    document.getElementById('pool-price-val').innerHTML = INIT_PRICE.toFixed(4) + '<span class="unit">U</span>' + (note ? `<div class="pool-stat-note">${note}</div>` : '');
+    document.getElementById('pool-k-val').innerHTML    = fmtPoolK(K) + (note ? `<div class="pool-stat-note">${note}</div>` : '');
+  }
+
+  async function loadPoolData() {
+    try {
+      const res = await fetch(`${BS_API}/addresses/${POOL_CA}/token-balances`);
+      if (!res.ok) throw new Error('http ' + res.status);
+      const balances = await res.json();
+      let gotNox = false, gotUsdt = false;
+      for (const b of balances) {
+        const addr = (b.token?.address || '').toLowerCase();
+        if (addr === NOX_CA_POOL) {
+          INIT_NOX = parseInt(b.value) / 1e18;
+          gotNox = true;
+        } else if (addr === USDT_CA_POOL) {
+          INIT_USDT = parseInt(b.value) / 1e6;
+          gotUsdt = true;
+        }
+      }
+      if (!gotNox || !gotUsdt) throw new Error('token not found');
+      K = INIT_NOX * INIT_USDT;
+      INIT_PRICE = INIT_USDT / INIT_NOX;
+      updatePoolCards();
+    } catch (e) {
+      updatePoolCards('⚠ 使用快照值');
+    }
+  }
 
   // Slider max: buy mode ~56M USDT (→ ~3000U), sell mode 100M NOX (1億)
   const SLIDER_MAX_BUY  = 56000000;
@@ -741,6 +805,14 @@
     }
   }
 
+  // Chart view state (pan/zoom)
+  let viewStart = 0, viewEnd = 1;
+
+  function resetChartView() {
+    viewStart = 0; viewEnd = 1;
+    drawChart();
+  }
+
   // Canvas chart
   function drawChart() {
     const canvas = document.getElementById('priceChart');
@@ -759,11 +831,10 @@
     const cW = W - pad.left - pad.right;
     const cH = H - pad.top - pad.bottom;
 
-    // Generate data points
-    const points = [];
+    // Generate all data points
     const maxInput = sliderMax();
     const steps = 200;
-
+    const allPoints = [];
     for (let i = 0; i <= steps; i++) {
       const input = (i / steps) * maxInput;
       let price;
@@ -776,22 +847,27 @@
         const newUsdt = K / newNox;
         price = newUsdt / newNox;
       }
-      points.push({ input, price });
+      allPoints.push({ input, price });
     }
 
-    const maxPrice = Math.max(...points.map(p => p.price)) * 1.1;
-    const minPrice = Math.min(...points.map(p => p.price)) * 0.9;
+    // Visible range
+    const viewMin = viewStart * maxInput;
+    const viewMax = viewEnd * maxInput;
+    const pts = allPoints.filter(p => p.input >= viewMin && p.input <= viewMax);
+    if (pts.length < 2) return;
 
-    // Grid
+    const maxPrice = Math.max(...pts.map(p => p.price)) * 1.1;
+    const minPrice = Math.min(...pts.map(p => p.price)) * 0.9;
+
+    const toX = (v) => pad.left + ((v - viewMin) / (viewMax - viewMin)) * cW;
+    const toY = (p) => pad.top  + ((maxPrice - p) / (maxPrice - minPrice)) * cH;
+
+    // Grid + Y labels
     ctx.strokeStyle = 'rgba(255,255,255,0.05)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 5; i++) {
       const y = pad.top + (i / 5) * cH;
-      ctx.beginPath();
-      ctx.moveTo(pad.left, y);
-      ctx.lineTo(pad.left + cW, y);
-      ctx.stroke();
-
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
       const val = maxPrice - (i / 5) * (maxPrice - minPrice);
       ctx.fillStyle = '#666';
       ctx.font = '11px JetBrains Mono';
@@ -802,12 +878,18 @@
     // X axis labels
     for (let i = 0; i <= 4; i++) {
       const x = pad.left + (i / 4) * cW;
-      const val = (i / 4) * maxInput;
+      const val = viewMin + (i / 4) * (viewMax - viewMin);
       ctx.fillStyle = '#666';
       ctx.font = '11px JetBrains Mono';
       ctx.textAlign = 'center';
-      ctx.fillText((val / 1000000).toFixed(0) + 'M', x, H - 8);
+      ctx.fillText((val / 1000000).toFixed(1) + 'M', x, H - 8);
     }
+
+    // Clip to chart area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(pad.left, pad.top, cW, cH);
+    ctx.clip();
 
     // Gradient fill
     const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
@@ -818,76 +900,48 @@
       gradient.addColorStop(0, 'rgba(239, 68, 68, 0)');
       gradient.addColorStop(1, 'rgba(239, 68, 68, 0.15)');
     }
-
     ctx.beginPath();
-    ctx.moveTo(pad.left, pad.top + cH);
-    for (const p of points) {
-      const x = pad.left + (p.input / maxInput) * cW;
-      const y = pad.top + ((maxPrice - p.price) / (maxPrice - minPrice)) * cH;
-      ctx.lineTo(x, y);
-    }
-    ctx.lineTo(pad.left + cW, pad.top + cH);
+    ctx.moveTo(toX(pts[0].input), pad.top + cH);
+    for (const p of pts) ctx.lineTo(toX(p.input), toY(p.price));
+    ctx.lineTo(toX(pts[pts.length-1].input), pad.top + cH);
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
 
     // Line
     ctx.beginPath();
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
-      const x = pad.left + (p.input / maxInput) * cW;
-      const y = pad.top + ((maxPrice - p.price) / (maxPrice - minPrice)) * cH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
+    pts.forEach((p, i) => { if (i === 0) ctx.moveTo(toX(p.input), toY(p.price)); else ctx.lineTo(toX(p.input), toY(p.price)); });
     ctx.strokeStyle = direction === 'buy' ? '#22C55E' : '#EF4444';
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Current input marker
+    // Current input marker — only draw if within visible range
     const currentAmount = parseFloat(document.getElementById('amount-input').value) || 0;
-    if (currentAmount > 0 && currentAmount <= maxInput * 2) {
+    if (currentAmount > 0 && currentAmount >= viewMin && currentAmount <= viewMax) {
       let markerPrice;
       if (direction === 'buy') {
-        const nu = INIT_USDT + currentAmount;
-        const nn = K / nu;
-        markerPrice = nu / nn;
+        const nu = INIT_USDT + currentAmount; markerPrice = nu / (K / nu);
       } else {
-        const nn = INIT_NOX + currentAmount;
-        const nu = K / nn;
-        markerPrice = nu / nn;
+        const nn = INIT_NOX + currentAmount; markerPrice = (K / nn) / nn;
       }
-      const mx = pad.left + (currentAmount / maxInput) * cW;
-      const my = pad.top + ((maxPrice - markerPrice) / (maxPrice - minPrice)) * cH;
-
-      // Vertical dashed line
+      const mx = toX(currentAmount), my = toY(markerPrice);
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = 'rgba(212, 168, 66, 0.4)';
       ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(mx, pad.top);
-      ctx.lineTo(mx, pad.top + cH);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mx, pad.top); ctx.lineTo(mx, pad.top + cH); ctx.stroke();
       ctx.setLineDash([]);
-
-      // Dot
-      ctx.beginPath();
-      ctx.arc(mx, my, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#D4A842';
-      ctx.fill();
-      ctx.strokeStyle = '#0A0A0F';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Label
+      ctx.beginPath(); ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#D4A842'; ctx.fill();
+      ctx.strokeStyle = '#0A0A0F'; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = '#D4A842';
       ctx.font = 'bold 13px JetBrains Mono';
       ctx.textAlign = 'left';
-      const labelText = markerPrice < 10 ? markerPrice.toFixed(3) + ' U' : Math.round(markerPrice) + ' U';
-      ctx.fillText(labelText, mx + 12, my - 8);
+      ctx.fillText(markerPrice < 10 ? markerPrice.toFixed(3) + ' U' : Math.round(markerPrice) + ' U', mx + 12, my - 8);
     }
 
-    // Axis label
+    ctx.restore();
+
+    // Axis labels
     ctx.fillStyle = '#666';
     ctx.font = '12px Noto Sans TC';
     ctx.textAlign = 'center';
@@ -899,9 +953,86 @@
     ctx.restore();
   }
 
+  // Chart pan/zoom state
+  let _isDragging = false, _dragLastX = 0, _touchLastX = 0, _pinchLastDist = 0;
+
+  function _chartPanBy(dxPx) {
+    const canvas = document.getElementById('priceChart');
+    const cW = canvas.getBoundingClientRect().width - 70 - 60;
+    const w = viewEnd - viewStart;
+    const delta = -(dxPx / cW) * w;
+    viewStart = Math.max(0, Math.min(1 - w, viewStart + delta));
+    viewEnd = viewStart + w;
+    drawChart();
+  }
+
+  function _chartZoomAt(fracX, factor) {
+    const w = viewEnd - viewStart;
+    const newW = Math.max(0.1, Math.min(1.0, w * factor));
+    const focus = viewStart + fracX * w;
+    viewStart = Math.max(0, focus - fracX * newW);
+    viewEnd = viewStart + newW;
+    if (viewEnd > 1) { viewEnd = 1; viewStart = Math.max(0, 1 - newW); }
+    drawChart();
+  }
+
+  function _chartFracX(canvas, clientX) {
+    const r = canvas.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - r.left - 70) / (r.width - 70 - 60)));
+  }
+
+  {
+    const canvas = document.getElementById('priceChart');
+
+    canvas.addEventListener('mousedown', e => {
+      _isDragging = true; _dragLastX = e.clientX;
+      canvas.classList.add('dragging');
+    });
+    window.addEventListener('mousemove', e => {
+      if (!_isDragging) return;
+      _chartPanBy(e.clientX - _dragLastX);
+      _dragLastX = e.clientX;
+    });
+    window.addEventListener('mouseup', () => { _isDragging = false; canvas.classList.remove('dragging'); });
+    canvas.addEventListener('mouseleave', () => { if (_isDragging) { _isDragging = false; canvas.classList.remove('dragging'); } });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.15 : 0.87;
+      _chartZoomAt(_chartFracX(canvas, e.clientX), factor);
+    }, { passive: false });
+
+    canvas.addEventListener('dblclick', resetChartView);
+
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) { _touchLastX = e.touches[0].clientX; _pinchLastDist = 0; }
+      if (e.touches.length === 2) {
+        _pinchLastDist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+      }
+    }, { passive: true });
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        _chartPanBy(e.touches[0].clientX - _touchLastX);
+        _touchLastX = e.touches[0].clientX;
+      } else if (e.touches.length === 2) {
+        const dist = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+        if (_pinchLastDist > 0) {
+          const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          _chartZoomAt(_chartFracX(canvas, midX), _pinchLastDist / dist);
+        }
+        _pinchLastDist = dist;
+      }
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { _pinchLastDist = 0; });
+  }
+
   // Init
-  calculate();
-  buildRefTable();
+  (async () => {
+    await loadPoolData();
+    calculate();
+    buildRefTable();
+  })();
 
   // Resize
   window.addEventListener('resize', () => { drawChart(); });
