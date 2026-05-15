@@ -487,9 +487,18 @@
   @media (max-width: 480px) {
     .pool-state { grid-template-columns: 1fr 1fr; gap: 10px; }
     .pool-stat { padding: 14px; }
-    .pool-stat-value { font-size: 18px; }
-    .input-wrapper input { font-size: 20px; }
+    .pool-stat-value { font-size: 16px; word-break: break-all; }
+    .input-wrapper input { font-size: 20px; width: 100%; box-sizing: border-box; }
     .hero { padding: 40px 0 24px; }
+    .chart-container { height: 220px; }
+    .preset-btns { gap: 6px; }
+    .preset-btn { font-size: 12px; padding: 5px 10px; }
+    .ref-table th:nth-child(5), .ref-table td:nth-child(5) { display: none; }
+  }
+
+  .ref-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Animations */
@@ -597,18 +606,20 @@
   <!-- Reference table -->
   <section class="ref-table-section fade-in">
     <h2>資金進場參考表</h2>
-    <table class="ref-table">
-      <thead>
-        <tr>
-          <th>進場資金 (U)</th>
-          <th>成交後幣價</th>
-          <th>價格漲幅</th>
-          <th>可購得 NOX</th>
-          <th>均價</th>
-        </tr>
-      </thead>
-      <tbody id="ref-tbody"></tbody>
-    </table>
+    <div class="ref-table-wrapper">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>進場資金 (U)</th>
+            <th>成交後幣價</th>
+            <th>價格漲幅</th>
+            <th>可購得 NOX</th>
+            <th>均價</th>
+          </tr>
+        </thead>
+        <tbody id="ref-tbody"></tbody>
+      </table>
+    </div>
   </section>
 
   <!-- Explanation -->
@@ -633,8 +644,8 @@
   const USDT_CA_POOL = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
   const BS_API = 'https://arbitrum.blockscout.com/api/v2';
 
-  let INIT_NOX = 1151799;
-  let INIT_USDT = 888943;
+  let INIT_NOX = 1403019;
+  let INIT_USDT = 745254;
   let K = INIT_NOX * INIT_USDT;
   let INIT_PRICE = INIT_USDT / INIT_NOX;
 
@@ -653,11 +664,12 @@
 
   async function loadPoolData() {
     try {
-      const res = await fetch(`${BS_API}/addresses/${POOL_CA}/token-balances`);
+      const res = await fetch(`${BS_API}/addresses/${POOL_CA}/tokens?type=ERC-20`);
       if (!res.ok) throw new Error('http ' + res.status);
-      const balances = await res.json();
+      const data = await res.json();
+      const items = data.items || [];
       let gotNox = false, gotUsdt = false;
-      for (const b of balances) {
+      for (const b of items) {
         const addr = (b.token?.address || '').toLowerCase();
         if (addr === NOX_CA_POOL) {
           INIT_NOX = parseInt(b.value) / 1e18;
@@ -672,7 +684,7 @@
       INIT_PRICE = INIT_USDT / INIT_NOX;
       updatePoolCards();
     } catch (e) {
-      updatePoolCards('⚠ 使用快照值');
+      updatePoolCards('⚠ 使用快照值，API 無法連線');
     }
   }
 
