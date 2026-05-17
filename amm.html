@@ -663,27 +663,37 @@
   }
 
   async function loadPoolData() {
+    const RPC = 'https://arb1.arbitrum.io/rpc';
+    const SEL = '0x70a08231'; // keccak256('balanceOf(address)')[:4]
+
+    async function balanceOf(tokenCA, holderCA) {
+      const padded = holderCA.slice(2).toLowerCase().padStart(64, '0');
+      const res = await fetch(RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0', method: 'eth_call',
+          params: [{ to: tokenCA, data: SEL + padded }, 'latest'],
+          id: 1
+        })
+      });
+      const json = await res.json();
+      if (!json.result || json.result === '0x') throw new Error('empty result');
+      return BigInt(json.result);
+    }
+
     try {
-      const res = await fetch(`${BS_API}/addresses/${POOL_CA}/tokens?type=ERC-20`);
-      if (!res.ok) throw new Error('http ' + res.status);
-      const data = await res.json();
-      const items = data.items || [];
-      let gotNox = false, gotUsdt = false;
-      for (const b of items) {
-        const addr = (b.token?.address || '').toLowerCase();
-        if (addr === NOX_CA_POOL) {
-          INIT_NOX = parseInt(b.value) / 1e18;
-          gotNox = true;
-        } else if (addr === USDT_CA_POOL) {
-          INIT_USDT = parseInt(b.value) / 1e6;
-          gotUsdt = true;
-        }
-      }
-      if (!gotNox || !gotUsdt) throw new Error('token not found');
-      K = INIT_NOX * INIT_USDT;
+      const [noxRaw, usdtRaw] = await Promise.all([
+        balanceOf(NOX_CA_POOL, POOL_CA),
+        balanceOf(USDT_CA_POOL, POOL_CA)
+      ]);
+      INIT_NOX   = Number(noxRaw)  / 1e18;
+      INIT_USDT  = Number(usdtRaw) / 1e6;
+      K          = INIT_NOX * INIT_USDT;
       INIT_PRICE = INIT_USDT / INIT_NOX;
       updatePoolCards();
     } catch (e) {
+      console.error('loadPoolData error:', e);
       updatePoolCards('⚠ 使用快照值，API 無法連線');
     }
   }
