@@ -512,13 +512,16 @@
     let totalBuyNox=0,totalBuyUsdt=0,buyCount=0;
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
     let totalStakeNox=0, totalUnstakeNox=0;
+    let totalTransferInNox=0, totalTransferOutNox=0;
     for(const row of rows) {
       if(row.type==='買')    { buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
       if(row.type==='賣')    { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
       if(row.type==='質押')   totalStakeNox+=row.noxAmt;
       if(row.type==='解質押') totalUnstakeNox+=row.noxAmt;
+      if(row.type==='轉入') totalTransferInNox+=row.noxAmt;
+      if(row.type==='轉出') totalTransferOutNox+=row.noxAmt;
     }
-    const netNox = totalBuyNox - totalSellNox;
+    const netNox = (totalBuyNox + totalTransferInNox) - (totalSellNox + totalTransferOutNox);
     const netStakeNox = totalStakeNox - totalUnstakeNox;
     const stakeRate = totalBuyNox>0 && netStakeNox>0 ? netStakeNox/totalBuyNox : null;
 
@@ -526,6 +529,7 @@
       rows, buyCount, sellCount,
       totalBuyNox, totalBuyUsdt, totalSellNox, totalSellUsdt,
       totalStakeNox, totalUnstakeNox, netStakeNox, stakeRate,
+      totalTransferInNox, totalTransferOutNox,
       avgBuy:  buyCount&&totalBuyUsdt   ? totalBuyUsdt/totalBuyNox   : null,
       avgSell: sellCount&&totalSellUsdt ? totalSellUsdt/totalSellNox : null,
       netNox,
