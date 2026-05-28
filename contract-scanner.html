@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC 合約風險掃描器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --gold: #D4A842; --gold-light: #F0D68A; --gold-dark: #A67C2E;
+    --green: #10b981; --green-glow: rgba(16,185,129,0.15);
+    --red: #EF4444; --red-glow: rgba(239,68,68,0.15);
+    --yellow: #f59e0b; --yellow-glow: rgba(245,158,11,0.15);
+    --bg-dark: #0A0E1A; --bg-card: #111827; --bg-input: #0D1321;
+    --text-primary: #EEEEF0; --text-secondary: #9999AA;
+    --purple: #8B5CF6;
+    --border: rgba(212,168,66,0.15); --border-focus: rgba(212,168,66,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family:'Noto Sans TC',-apple-system,sans-serif;
+    background:var(--bg-dark); color:var(--text-primary);
+    line-height:1.7; overflow-x:hidden; min-height:100vh;
+  }
+
+  body::before {
+    content:''; position:fixed; top:0;left:0;right:0;bottom:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%,rgba(139,92,246,0.08) 0%,transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 50%,rgba(212,168,66,0.05) 0%,transparent 50%);
+    pointer-events:none; z-index:0;
+  }
+
+  .container { max-width:860px; margin:0 auto; padding:0 20px; position:relative; z-index:1; }
+
+  /* Hero */
+  .hero { text-align:center; padding:52px 0 32px; }
+  .hero-badge { display:inline-block; padding:5px 16px; border:1px solid var(--purple); border-radius:50px; font-size:11px; letter-spacing:2px; color:var(--purple); text-transform:uppercase; margin-bottom:18px; background:rgba(139,92,246,0.1); }
+  .hero h1 { font-size:clamp(22px,4vw,34px); font-weight:900; line-height:1.2; margin-bottom:10px; background:linear-gradient(135deg,var(--gold-light) 0%,var(--gold) 50%,var(--gold-dark) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .hero-sub { font-size:13px; color:var(--text-secondary); }
+
+  /* Input section */
+  .input-section { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:24px; }
+  .input-row { display:flex; gap:10px; align-items:stretch; flex-wrap:wrap; }
+  .addr-input {
+    flex:1; min-width:240px; padding:14px 20px;
+    background:var(--bg-input); border:1px solid var(--border);
+    border-radius:12px; color:var(--text-primary);
+    font-family:'JetBrains Mono',monospace; font-size:13px;
+    outline:none; transition:border-color 0.2s;
+  }
+  .addr-input:focus { border-color:var(--border-focus); }
+  .addr-input::placeholder { color:var(--text-secondary); }
+  .addr-input.error { border-color:var(--red); }
+
+  .scan-btn {
+    padding:14px 28px; background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+    border:none; border-radius:12px; color:#0A0A0F;
+    font-family:'Noto Sans TC',sans-serif; font-size:15px; font-weight:700;
+    cursor:pointer; transition:opacity 0.2s; white-space:nowrap;
+  }
+  .scan-btn:hover:not(:disabled) { opacity:0.88; }
+  .scan-btn:disabled { opacity:0.45; cursor:not-allowed; }
+
+  .clear-btn {
+    padding:14px 18px; border:1px solid var(--border); border-radius:12px;
+    background:transparent; color:var(--text-secondary); font-size:16px;
+    cursor:pointer; transition:all 0.15s; white-space:nowrap;
+  }
+  .clear-btn:hover { border-color:var(--red); color:var(--red); }
+
+  .input-hint { margin-top:10px; font-size:12px; color:var(--red); min-height:18px; }
+
+  /* Rating banner */
+  .rating-banner {
+    border-radius:20px; padding:28px 32px; margin-bottom:24px;
+    display:flex; align-items:center; gap:20px; display:none;
+  }
+  .rating-banner.high   { background:rgba(239,68,68,0.08);   border:1px solid rgba(239,68,68,0.35); }
+  .rating-banner.medium { background:rgba(245,158,11,0.08);  border:1px solid rgba(245,158,11,0.35); }
+  .rating-banner.low    { background:rgba(16,185,129,0.08);  border:1px solid rgba(16,185,129,0.35); }
+  .rating-banner.unknown{ background:rgba(148,163,184,0.08); border:1px solid rgba(148,163,184,0.3); }
+  .rating-icon { font-size:48px; line-height:1; flex-shrink:0; }
+  .rating-text {}
+  .rating-label { font-size:22px; font-weight:900; margin-bottom:4px; }
+  .rating-banner.high   .rating-label { color:var(--red); }
+  .rating-banner.medium .rating-label { color:var(--yellow); }
+  .rating-banner.low    .rating-label { color:var(--green); }
+  .rating-banner.unknown .rating-label { color:#94A3B8; }
+  .rating-desc { font-size:13px; color:var(--text-secondary); }
+
+  /* Overview card */
+  .overview-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:24px; display:none; }
+  .card-title { font-size:14px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:18px; }
+  .overview-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media(max-width:480px){ .overview-grid { grid-template-columns:1fr; } .input-row { flex-direction:column; } }
+  .overview-item { background:var(--bg-input); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .overview-key { font-size:11px; color:var(--text-secondary); letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  .overview-val { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; word-break:break-all; }
+  .overview-val.ok    { color:var(--green); }
+  .overview-val.warn  { color:var(--yellow); }
+  .overview-val.bad   { color:var(--red); }
+  .overview-val.muted { color:var(--text-secondary); }
+  .tag-pill {
+    display:inline-block; padding:2px 10px; border-radius:4px; font-size:11px; font-weight:700;
+    margin-top:4px; font-family:'JetBrains Mono',monospace; letter-spacing:1px;
+  }
+  .tag-yes { background:rgba(16,185,129,0.12); color:var(--green); }
+  .tag-no  { background:rgba(239,68,68,0.12);  color:var(--red); }
+  .tag-warn{ background:rgba(245,158,11,0.12); color:var(--yellow); }
+  .tag-gray{ background:rgba(148,163,184,0.12);color:#94A3B8; }
+
+  /* Risk list */
+  .risk-card { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:24px; display:none; }
+  .risk-list { display:flex; flex-direction:column; gap:10px; }
+  .risk-item {
+    display:flex; align-items:flex-start; gap:14px; padding:14px 18px;
+    border-radius:12px; border:1px solid transparent;
+    background:var(--bg-input);
+  }
+  .risk-item.detected-high   { border-color:rgba(239,68,68,0.4);   background:rgba(239,68,68,0.06); }
+  .risk-item.detected-medium { border-color:rgba(245,158,11,0.4);  background:rgba(245,158,11,0.06); }
+  .risk-item.clear           { border-color:rgba(16,185,129,0.2);  background:rgba(16,185,129,0.04); }
+  .risk-icon-wrap { font-size:20px; line-height:1.3; flex-shrink:0; margin-top:1px; }
+  .risk-body { flex:1; }
+  .risk-name { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .risk-item.detected-high   .risk-name { color:var(--red); }
+  .risk-item.detected-medium .risk-name { color:var(--yellow); }
+  .risk-item.clear           .risk-name { color:var(--green); }
+  .risk-desc { font-size:12px; color:var(--text-secondary); }
+  .risk-status { font-size:12px; font-weight:700; flex-shrink:0; align-self:center; }
+  .risk-item.detected-high   .risk-status { color:var(--red); }
+  .risk-item.detected-medium .risk-status { color:var(--yellow); }
+  .risk-item.clear           .risk-status { color:var(--green); }
+
+  /* Loading */
+  .loading-section { text-align:center; padding:48px 0; display:none; }
+  .spinner {
+    width:44px; height:44px; border:3px solid rgba(212,168,66,0.15);
+    border-top-color:var(--gold); border-radius:50%;
+    animation:spin 0.8s linear infinite; margin:0 auto 16px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-label { font-size:13px; color:var(--text-secondary); }
+  .loading-steps { margin-top:12px; display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .step-dot { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); }
+  .step-dot .dot { width:7px; height:7px; border-radius:50%; background:rgba(212,168,66,0.2); transition:background 0.3s; }
+  .step-dot.active .dot { background:var(--gold); }
+  .step-dot.done   .dot { background:var(--green); }
+
+  /* Error */
+  .error-section { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:16px; padding:24px; text-align:center; margin-bottom:24px; display:none; }
+  .error-section .err-icon { font-size:32px; margin-bottom:8px; }
+  .error-section .err-msg  { color:var(--red); font-weight:600; }
+  .error-section .err-sub  { font-size:12px; color:var(--text-secondary); margin-top:6px; }
+
+  /* Footer */
+  .footer { text-align:center; padding:32px 0 48px; font-size:12px; color:var(--text-secondary); opacity:0.6; }
+  .footer a { color:var(--gold); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">BSC Contract Scanner</div>
+    <h1>代幣合約風險檢測器</h1>
+    <p class="hero-sub">輸入 BSC 合約地址，自動掃描 mint / blacklist / proxy 等常見風險</p>
+  </div>
+
+  <!-- Input -->
+  <div class="input-section">
+    <div class="input-row">
+      <input class="addr-input" id="addrInput"
+             placeholder="貼上 BSC 合約地址（0x...）"
+             autocomplete="off" spellcheck="false" />
+      <button class="scan-btn" id="scanBtn" onclick="startScan()">掃描</button>
+      <button class="clear-btn" id="clearBtn" onclick="clearAll()" title="清除">✕</button>
+    </div>
+    <div class="input-hint" id="inputHint"></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-section" id="loadingSection">
+    <div class="spinner"></div>
+    <div class="loading-label">正在掃描合約...</div>
+    <div class="loading-steps">
+      <div class="step-dot" id="stepA"><span class="dot"></span>Step A：拉取合約資訊</div>
+      <div class="step-dot" id="stepB"><span class="dot"></span>Step B：On-chain 檢查</div>
+      <div class="step-dot" id="stepC"><span class="dot"></span>Step C：原始碼風險分析</div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-section" id="errorSection">
+    <div class="err-icon">⚠️</div>
+    <div class="err-msg" id="errMsg">無法連線，請稍後重試</div>
+    <div class="err-sub" id="errSub"></div>
+  </div>
+
+  <!-- Rating Banner -->
+  <div class="rating-banner" id="ratingBanner">
+    <div class="rating-icon" id="ratingIcon"></div>
+    <div class="rating-text">
+      <div class="rating-label" id="ratingLabel"></div>
+      <div class="rating-desc" id="ratingDesc"></div>
+    </div>
+  </div>
+
+  <!-- Overview Card -->
+  <div class="overview-card" id="overviewCard">
+    <div class="card-title">合約概覽</div>
+    <div class="overview-grid" id="overviewGrid"></div>
+  </div>
+
+  <!-- Risk Card -->
+  <div class="risk-card" id="riskCard">
+    <div class="card-title">風險項目掃描</div>
+    <div class="risk-list" id="riskList"></div>
+  </div>
+
+  <div class="footer">
+    資料來源：<a href="https://bscscan.com" target="_blank">BSCScan</a> + BSC RPC（bsc-dataseed.binance.org）
+    &nbsp;·&nbsp; 本工具僅供參考，不構成投資建議
+  </div>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────────
+const BSCSCAN_API = 'https://api.bscscan.com/api';
+const BSC_RPC     = 'https://bsc-dataseed.binance.org/';
+
+// Risk patterns (keyword arrays matched case-insensitively)
+const RISKS = [
+  { id:'mint',     level:'high',   name:'可增發（Mint）',
+    patterns:[/function\s+mint\b/i, /_mint\s*\(/i, /function\s+safeMint\b/i],
+    desc:'合約包含增發函式，持有者總量可能被稀釋。' },
+  { id:'pause',    level:'high',   name:'可暫停交易（Pause）',
+    patterns:[/function\s+pause\b/i, /\bPausable\b/i, /\bwhenNotPaused\b/i],
+    desc:'合約擁有者可隨時暫停所有轉帳，用戶資產將被鎖定。' },
+  { id:'blacklist',level:'high',   name:'黑名單機制（Blacklist）',
+    patterns:[/\bblacklist\b/i, /\baddBlacklist\b/i, /\bisBlacklisted\b/i, /\b_blacklisted\b/i],
+    desc:'擁有者可將特定地址列入黑名單，阻止其轉帳。' },
+  { id:'proxy',    level:'high',   name:'可升級合約（Proxy / Upgrade）',
+    patterns:[/\bupgradeTo\b/i, /\bupgradeToAndCall\b/i, /\b_setImplementation\b/i, /\bERC1967\b/i],
+    desc:'合約邏輯可被替換，擁有者能隨時修改規則。' },
+  { id:'fee',      level:'medium', name:'可修改稅率（Fee）',
+    patterns:[/\bsetFee\b/i, /\bsetTaxFee\b/i, /\bsetMarketingFee\b/i, /\b_taxFee\b/i],
+    desc:'擁有者可動態調整交易稅率，存在提高滑點風險。' },
+  { id:'maxtx',    level:'medium', name:'最大交易限制（MaxTx）',
+    patterns:[/\bmaxTxAmount\b/i, /\b_maxTxAmount\b/i, /\bmaxTransactionAmount\b/i],
+    desc:'合約限制單筆最大交易量，可能影響大額操作。' },
+  { id:'antibot',  level:'medium', name:'反機器人 / 交易冷卻（AntiBot）',
+    patterns:[/\bcooldown\b/i, /\btradingEnabled\b/i, /\bantiBot\b/i, /\blaunchTime\b/i],
+    desc:'合約含交易冷卻或 AntiBot 機制，部分操作可能被阻擋。' },
+  { id:'whitelist',level:'medium', name:'白名單機制（Whitelist）',
+    patterns:[/\bwhitelist\b/i, /\bisWhitelisted\b/i, /\baddWhitelist\b/i],
+    desc:'只有特定地址可進行某些操作，存在操縱風險。' },
+];
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let scanning = false;
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function isValidAddress(addr) {
+  return /^0x[0-9a-fA-F]{40}$/.test(addr.trim());
+}
+
+function shortAddr(addr) {
+  return addr ? addr.slice(0,6)+'...'+addr.slice(-4) : '—';
+}
+
+function formatSupply(hex) {
+  if (!hex || hex === '0x') return '無法讀取';
+  try {
+    const n = BigInt(hex);
+    const d = Number(n) / 1e18;
+    if (d >= 1e12) return (d/1e12).toFixed(2) + ' 兆';
+    if (d >= 1e8)  return (d/1e8).toFixed(2) + ' 億';
+    if (d >= 1e4)  return d.toLocaleString('zh-Hant');
+    return d.toFixed(4);
+  } catch { return hex; }
+}
+
+async function rpcCall(method, params) {
+  const res = await fetch(BSC_RPC, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ jsonrpc:'2.0', id:1, method, params }),
+    signal:AbortSignal.timeout(10000),
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result;
+}
+
+async function ethCall(addr, selector) {
+  try {
+    const r = await rpcCall('eth_call', [{ to:addr, data:selector }, 'latest']);
+    return r;
+  } catch { return null; }
+}
+
+// ── UI helpers ─────────────────────────────────────────────────────────────────
+function setStep(id, state) { // 'active' | 'done'
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'step-dot ' + state;
+}
+
+function showError(msg, sub='') {
+  hide('loadingSection');
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('errSub').textContent = sub;
+  show('errorSection');
+}
+
+function show(id) { document.getElementById(id).style.display = 'flex'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showBlock(id) { document.getElementById(id).style.display = 'block'; }
+
+function resetUI() {
+  ['loadingSection','errorSection','ratingBanner','overviewCard','riskCard']
+    .forEach(id => { document.getElementById(id).style.display = 'none'; });
+  document.getElementById('inputHint').textContent = '';
+  document.getElementById('addrInput').classList.remove('error');
+  ['stepA','stepB','stepC'].forEach(s => setStep(s,''));
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────────
+async function startScan() {
+  if (scanning) return;
+  const raw = document.getElementById('addrInput').value.trim();
+  if (!raw) { document.getElementById('inputHint').textContent = '請輸入合約地址'; return; }
+  if (!isValidAddress(raw)) {
+    document.getElementById('addrInput').classList.add('error');
+    document.getElementById('inputHint').textContent = '地址格式無效（應為 0x + 40 位十六進位字元）';
+    return;
+  }
+
+  const addr = raw.toLowerCase();
+  scanning = true;
+  document.getElementById('scanBtn').disabled = true;
+  resetUI();
+  show('loadingSection');
+
+  try {
+    // ── Step A: BSCscan getsourcecode ────────────────────────────────────────
+    setStep('stepA','active');
+    let contractInfo = {};
+    try {
+      const url = `${BSCSCAN_API}?module=contract&action=getsourcecode&address=${addr}&apikey=YourApiKeyToken`;
+      const r = await fetch(url, { signal:AbortSignal.timeout(12000) });
+      const j = await r.json();
+      if (j.status === '1' && j.result && j.result[0]) {
+        contractInfo = j.result[0];
+      }
+    } catch(e) {
+      // Non-fatal – continue with RPC
+    }
+    setStep('stepA','done');
+
+    const isVerified  = contractInfo.ABI && contractInfo.ABI !== 'Contract source code not verified';
+    const isProxy     = contractInfo.Proxy === '1';
+    const contractName = contractInfo.ContractName || '未知';
+    const sourceCode   = contractInfo.SourceCode || '';
+
+    // ── Step B: On-chain RPC ─────────────────────────────────────────────────
+    setStep('stepB','active');
+    const [ownerRaw, pausedRaw, supplyRaw] = await Promise.all([
+      ethCall(addr, '0x8da5cb5b'),  // owner()
+      ethCall(addr, '0x5c975abb'),  // paused()
+      ethCall(addr, '0x18160ddd'),  // totalSupply()
+    ]);
+    setStep('stepB','done');
+
+    // Parse owner
+    let ownerAddr = null, ownerAbandoned = false;
+    if (ownerRaw && ownerRaw.length >= 66) {
+      ownerAddr = '0x' + ownerRaw.slice(-40);
+      ownerAbandoned = ownerAddr === '0x0000000000000000000000000000000000000000';
+    }
+
+    // Parse paused
+    let pausedVal = null;
+    if (pausedRaw !== null) {
+      pausedVal = BigInt(pausedRaw || '0') !== 0n;
+    }
+
+    // ── Step C: Source code analysis ─────────────────────────────────────────
+    setStep('stepC','active');
+    const riskResults = [];
+    if (isVerified && sourceCode) {
+      for (const risk of RISKS) {
+        const hit = risk.patterns.some(pat => pat.test(sourceCode));
+        riskResults.push({ ...risk, detected: hit });
+      }
+    }
+    setStep('stepC','done');
+
+    // ── Compute rating ────────────────────────────────────────────────────────
+    let rating;
+    if (!isVerified) {
+      rating = 'unknown';
+    } else {
+      const highHits   = riskResults.filter(r => r.detected && r.level === 'high').length;
+      const mediumHits = riskResults.filter(r => r.detected && r.level === 'medium').length;
+      if (highHits >= 1)              rating = 'high';
+      else if (mediumHits >= 2)       rating = 'medium';
+      else                            rating = 'low';
+    }
+
+    // ── Hide loading ──────────────────────────────────────────────────────────
+    hide('loadingSection');
+
+    // ── Rating Banner ─────────────────────────────────────────────────────────
+    const ratingMeta = {
+      high:    { icon:'🔴', label:'高風險', desc:'偵測到一項或多項高危特性，請謹慎操作' },
+      medium:  { icon:'🟡', label:'中風險', desc:'偵測到多項中等風險特性，建議進一步研究' },
+      low:     { icon:'🟢', label:'低風險', desc:'未偵測到明顯高危特性，仍建議自行盡職調查' },
+      unknown: { icon:'⚪', label:'無法分析', desc:'合約未驗證，原始碼無法取得——本身即為風險訊號' },
+    };
+    const meta = ratingMeta[rating];
+    const banner = document.getElementById('ratingBanner');
+    banner.className = 'rating-banner ' + rating;
+    document.getElementById('ratingIcon').textContent  = meta.icon;
+    document.getElementById('ratingLabel').textContent = meta.label;
+    document.getElementById('ratingDesc').textContent  = meta.desc;
+    banner.style.display = 'flex';
+
+    // ── Overview Card ─────────────────────────────────────────────────────────
+    const overviewItems = [
+      {
+        key:'合約名稱',
+        val: contractName,
+        cls: contractName !== '未知' ? '' : 'muted',
+      },
+      {
+        key:'原始碼驗證',
+        val: isVerified ? '✓ 已驗證' : '✗ 未驗證',
+        cls: isVerified ? 'ok' : 'bad',
+        tag: isVerified ? null : { text:'UNVERIFIED', cls:'tag-no' },
+      },
+      {
+        key:'代理合約（Proxy）',
+        val: isProxy ? '是' : '否',
+        cls: isProxy ? 'warn' : 'ok',
+        tag: isProxy ? { text:'PROXY', cls:'tag-warn' } : { text:'NO', cls:'tag-yes' },
+      },
+      {
+        key:'合約擁有者（Owner）',
+        val: ownerAddr
+          ? (ownerAbandoned ? '0x000...000（已放棄）' : shortAddr(ownerAddr))
+          : '無法讀取',
+        cls: ownerAbandoned ? 'ok' : (ownerAddr ? '' : 'muted'),
+        extra: ownerAddr && !ownerAbandoned ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:3px;word-break:break-all">${ownerAddr}</div>` : '',
+        tag: ownerAbandoned ? { text:'RENOUNCED', cls:'tag-yes' } : null,
+      },
+      {
+        key:'總供應量（totalSupply）',
+        val: supplyRaw !== null ? formatSupply(supplyRaw) : '無法讀取',
+        cls: supplyRaw !== null ? '' : 'muted',
+      },
+      {
+        key:'暫停狀態（paused）',
+        val: pausedVal === null ? '無此功能 / 無法讀取' : (pausedVal ? '已暫停 ⚠️' : '正常運行'),
+        cls: pausedVal === true ? 'bad' : (pausedVal === false ? 'ok' : 'muted'),
+      },
+    ];
+
+    const grid = document.getElementById('overviewGrid');
+    grid.innerHTML = overviewItems.map(item => `
+      <div class="overview-item">
+        <div class="overview-key">${item.key}</div>
+        <div class="overview-val ${item.cls||''}">${item.val}${item.extra||''}
+          ${item.tag ? `<br><span class="tag-pill ${item.tag.cls}">${item.tag.text}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+    showBlock('overviewCard');
+
+    // ── Risk Card ─────────────────────────────────────────────────────────────
+    const riskListEl = document.getElementById('riskList');
+    if (!isVerified) {
+      riskListEl.innerHTML = `
+        <div class="risk-item detected-high">
+          <div class="risk-icon-wrap">⚠️</div>
+          <div class="risk-body">
+            <div class="risk-name">合約未驗證</div>
+            <div class="risk-desc">原始碼未上傳至 BSCScan，無法進行原始碼風險掃描。合約未驗證本身是一個重要的風險訊號。</div>
+          </div>
+          <div class="risk-status">偵測到</div>
+        </div>`;
+    } else if (riskResults.length === 0) {
+      riskListEl.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;padding:8px 0">無掃描結果</div>';
+    } else {
+      riskListEl.innerHTML = riskResults.map(r => {
+        const itemCls    = r.detected ? (r.level === 'high' ? 'detected-high' : 'detected-medium') : 'clear';
+        const statusText = r.detected ? '⚠️ 偵測到' : '✅ 未偵測到';
+        const iconText   = r.detected ? (r.level === 'high' ? '🔴' : '🟡') : '✅';
+        return `
+          <div class="risk-item ${itemCls}">
+            <div class="risk-icon-wrap">${iconText}</div>
+            <div class="risk-body">
+              <div class="risk-name">${r.name}</div>
+              <div class="risk-desc">${r.desc}</div>
+            </div>
+            <div class="risk-status">${statusText}</div>
+          </div>`;
+      }).join('');
+    }
+    showBlock('riskCard');
+
+  } catch(err) {
+    showError('掃描失敗，請稍後重試', err.message || '');
+  } finally {
+    scanning = false;
+    document.getElementById('scanBtn').disabled = false;
+  }
+}
+
+function clearAll() {
+  document.getElementById('addrInput').value = '';
+  resetUI();
+  ['loadingSection','errorSection','ratingBanner','overviewCard','riskCard']
+    .forEach(id => { document.getElementById(id).style.display = 'none'; });
+}
+
+// Allow Enter key to trigger scan
+document.getElementById('addrInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startScan();
+});
+</script>
+</body>
+</html>
