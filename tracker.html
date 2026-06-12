@@ -390,12 +390,18 @@
          : 'var(--text-primary)';
   }
 
+  function fetchWithTimeout(url, ms=25000) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), ms);
+    return fetch(url, {signal: ctrl.signal}).finally(()=>clearTimeout(tid));
+  }
+
   async function fetchTransfersArbiscan(address, tokenContract, apiKey, onProgress) {
     const allItems = [];
     let page = 1;
-    while(page <= 10) {
+    while(page <= 50) {
       const url = `https://api.arbiscan.io/api?module=account&action=tokentx&address=${address}&contractaddress=${tokenContract}&startblock=0&endblock=99999999&page=${page}&offset=10000&sort=desc&apikey=${apiKey}`;
-      const r = await fetch(url);
+      const r = await fetchWithTimeout(url);
       if(!r.ok) break;
       const j = await r.json();
       if(j.status !== '1') break;
@@ -411,6 +417,7 @@
       if(batch.length < 10000) break;
       page++;
     }
+    window._dataTruncated = (page > 50);
     return allItems;
   }
 
@@ -419,7 +426,7 @@
     let url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20`;
     let page = 0;
     while(page < 100) {
-      const r = await fetch(url);
+      const r = await fetchWithTimeout(url);
       if(!r.ok) break;
       const j = await r.json();
       items.push(...(j.items||[]));
@@ -430,6 +437,7 @@
       await sleep(80);
       page++;
     }
+    window._dataTruncated = (page >= 100);
     return items;
   }
 
@@ -444,7 +452,7 @@
     const items = [];
     let url = `${BS}/addresses/${address}/transactions?filter=to%7Cfrom`;
     for(let p=0; p<maxPages; p++) {
-      const r = await fetch(url);
+      const r = await fetchWithTimeout(url);
       if(!r.ok) break;
       const j = await r.json();
       items.push(...(j.items||[]));
@@ -755,6 +763,12 @@
         document.getElementById('stats-section').style.display='block';
         window._txTotal=d.rows.length;
         document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
+        if(window._dataTruncated) {
+          const warn=document.createElement('p');
+          warn.style.cssText='text-align:center;padding:10px;font-size:12px;color:var(--gold);opacity:0.8;';
+          warn.textContent='⚠️ 資料筆數已達上限，部分早期交易可能未顯示。建議設定 Arbiscan API Key 取得完整記錄。';
+          document.getElementById('table-body').appendChild(warn);
+        }
       }
 
       // Related wallets
@@ -825,7 +839,8 @@
       progressEl.style.display='none';
       buildGraph(wallet, related);
     } catch(e) {
-      document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ 查詢失敗：${e.message}</p></div>`;
+      const msg = e.name==='AbortError' ? '查詢超時（>25s），請稍後重試或改用 Arbiscan 模式' : `查詢失敗：${e.message}`;
+      document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ ${msg}</p></div>`;
     }
 
     btn.disabled=false; btn.textContent='查詢';
@@ -875,7 +890,7 @@
   }
 
   document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('wallet-input').addEventListener('keydown',e=>{ if(e.key==='Enter') search(); });
+    document.getElementById('wallet-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!document.getElementById('search-btn').disabled) search(); });
     updateModeBadge();
     const a=new URLSearchParams(location.search).get('a');
     if(a&&a.startsWith('0x')&&a.length===42){
