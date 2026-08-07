@@ -7,6 +7,7 @@
   const NEGLECT_DAYS = 3;
   const EQUIPMENT_KEY = "noxcat_equipped";
   const SLOTS = ["background", "hat", "clothes", "handheld"];
+  const MENU_ITEMS = ["feed", "play", "clean", "harvest", "share", "name", "shop"];
   const dayKey = (time) => new Date(time).toISOString().slice(0, 10);
   const freshState = (now) => ({ bornAt: now, maxSeenAt: now, lastCareAt: now, lastHarvestAt: 0, hearts: 0, activeDays: 0, activeDay: "", feeds: {}, playedDays: {}, bonusDays: {}, name: "", revived: false });
   function normalize(state, now) {
@@ -49,5 +50,7 @@
   }
   function share(state, now, equipped) { const next = normalize(state, now); return { state: next, awarded: award(next, 1, equipped) }; }
   function revive(state, now) { const next = normalize(state, now); next.lastCareAt = next.maxSeenAt; next.revived = true; return next; }
-  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, spritePrefixFor, spriteFor, equipmentBonus, care, canHarvest, harvest, share, revive };
+  function moveMenuCursor(index, direction) { return (Number(index) + Number(direction) + MENU_ITEMS.length) % MENU_ITEMS.length; }
+  function menuItemAt(index) { return MENU_ITEMS[((Number(index) % MENU_ITEMS.length) + MENU_ITEMS.length) % MENU_ITEMS.length]; }
+  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, MENU_ITEMS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, spritePrefixFor, spriteFor, equipmentBonus, care, canHarvest, harvest, share, revive, moveMenuCursor, menuItemAt };
 });
