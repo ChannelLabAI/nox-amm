@@ -24,6 +24,8 @@
     return state.playedDays[key] ? "happy" : "normal";
   }
   function stageFor(activeDays) { return activeDays <= 2 ? "egg" : activeDays <= 8 ? "kitten" : activeDays <= 15 ? "teen" : "adult"; }
+  const spritePrefixFor = (stage) => ({ kitten: "kitten", teen: "teen", adult: "noxcat" })[stage] || "noxcat";
+  const spriteFor = (stage, catMood) => `assets/${spritePrefixFor(stage)}-${catMood}.png`;
   function equipmentBonus(equipped) { return SLOTS.reduce((total, slot) => total + (equipped && equipped[slot] ? 1 : 0), 0); }
   function award(state, base, equipped) { const amount = base + equipmentBonus(equipped); state.hearts += amount; return amount; }
   function care(state, kind, now, equipped) {
@@ -47,5 +49,5 @@
   }
   function share(state, now, equipped) { const next = normalize(state, now); return { state: next, awarded: award(next, 1, equipped) }; }
   function revive(state, now) { const next = normalize(state, now); next.lastCareAt = next.maxSeenAt; next.revived = true; return next; }
-  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, equipmentBonus, care, canHarvest, harvest, share, revive };
+  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, spritePrefixFor, spriteFor, equipmentBonus, care, canHarvest, harvest, share, revive };
 });

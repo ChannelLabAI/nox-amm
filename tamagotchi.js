@@ -11,17 +11,17 @@
   const stageName = { egg: "蛋", kitten: "幼貓", teen: "少年貓", adult: "成貓" };
   const moodName = { normal: "精神飽滿", happy: "開心到發亮", hungry: "肚子餓了", sick: "正在醫院" };
   function animateCare(kind) {
-    if (kind !== "feed" && kind !== "play") return;
+    if (kind !== "feed" && kind !== "play" && kind !== "clean") return;
     const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
-    cat.classList.remove("care-feed", "care-play"); void cat.offsetWidth; cat.classList.add(className);
-    const icon = document.createElement("span"); icon.className = "care-icon"; icon.setAttribute("aria-hidden", "true"); icon.textContent = kind === "feed" ? "🍚" : "🧶";
+    cat.classList.remove("care-feed", "care-play", "care-clean"); void cat.offsetWidth; cat.classList.add(className);
+    const icon = document.createElement("span"); icon.className = "care-icon"; icon.setAttribute("aria-hidden", "true"); icon.textContent = ({ feed: "🍚", play: "🎣", clean: "🫧" })[kind];
     frame.append(icon); setTimeout(() => { cat.classList.remove(className); icon.remove(); }, 500);
   }
   function render() {
     state = core.normalize(state, now()); save();
-    const mood = core.mood(state, now()), hospital = core.isHospitalized(state, now()), key = core.dayKey(state.maxSeenAt), gear = equipped();
-    $("#cat").src = `assets/noxcat-${mood}.png`; $("#cat").alt = `${state.name || "NOX 喵喵喵"}：${moodName[mood]}`;
-    $("#stage").textContent = stageName[core.stageFor(state.activeDays)]; $("#mood").textContent = moodName[mood]; $("#hearts").textContent = state.hearts;
+    const mood = core.mood(state, now()), stage = core.stageFor(state.activeDays), hospital = core.isHospitalized(state, now()), key = core.dayKey(state.maxSeenAt), gear = equipped();
+    $("#cat").src = core.spriteFor(stage, mood); $("#cat").alt = `${state.name || "NOX 喵喵喵"}：${moodName[mood]}`;
+    const stageLabel = $("#stage"); if (stageLabel) stageLabel.textContent = stageName[stage]; $("#mood").textContent = moodName[mood]; $("#hearts").textContent = state.hearts;
     $("#welcome").textContent = state.name ? `${state.name} 的農場日記` : "每天陪牠一下，收成愛心。";
     $("#warning").hidden = !core.warningDue(state, now()); $("#hospital").hidden = !hospital; $("#actions").hidden = hospital;
     const mealCount = state.feeds[key] || 0; $("#feed-label").textContent = mealCount >= 3 ? "今天吃飽了" : `餵食 ${mealCount + 1}/3`;
