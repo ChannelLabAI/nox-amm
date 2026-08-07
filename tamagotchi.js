@@ -1,0 +1,57 @@
+(() => {
+  const STORAGE_KEY = "noxcat-tamagotchi-v1";
+  const core = window.NoxCatCore;
+  const now = () => Date.now(); const $ = (s) => document.querySelector(s);
+  let state;
+  const load = () => { try { return core.normalize(JSON.parse(localStorage.getItem(STORAGE_KEY)), now()); } catch { return core.freshState(now()); } };
+  const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const equipped = () => { try { return { background: null, hat: null, clothes: null, handheld: null, ...JSON.parse(localStorage.getItem(core.EQUIPMENT_KEY)) }; } catch { return { background: null, hat: null, clothes: null, handheld: null }; } };
+  const message = (text) => { $("#message").textContent = text; };
+  const remaining = (ms) => `約 ${Math.max(1, Math.ceil(Math.max(0, ms) / 3600000))} 小時`;
+  const stageName = { egg: "蛋", kitten: "幼貓", teen: "少年貓", adult: "成貓" };
+  const moodName = { normal: "精神飽滿", happy: "開心到發亮", hungry: "肚子餓了", sick: "正在醫院" };
+  function animateCare(kind) {
+    if (kind !== "feed" && kind !== "play") return;
+    const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
+    cat.classList.remove("care-feed", "care-play"); void cat.offsetWidth; cat.classList.add(className);
+    const icon = document.createElement("span"); icon.className = "care-icon"; icon.setAttribute("aria-hidden", "true"); icon.textContent = kind === "feed" ? "🍚" : "🧶";
+    frame.append(icon); setTimeout(() => { cat.classList.remove(className); icon.remove(); }, 500);
+  }
+  function render() {
+    state = core.normalize(state, now()); save();
+    const mood = core.mood(state, now()), hospital = core.isHospitalized(state, now()), key = core.dayKey(state.maxSeenAt), gear = equipped();
+    $("#cat").src = `assets/noxcat-${mood}.png`; $("#cat").alt = `${state.name || "NOX 喵喵喵"}：${moodName[mood]}`;
+    $("#stage").textContent = stageName[core.stageFor(state.activeDays)]; $("#mood").textContent = moodName[mood]; $("#hearts").textContent = state.hearts;
+    $("#welcome").textContent = state.name ? `${state.name} 的農場日記` : "每天陪牠一下，收成愛心。";
+    $("#warning").hidden = !core.warningDue(state, now()); $("#hospital").hidden = !hospital; $("#actions").hidden = hospital;
+    const mealCount = state.feeds[key] || 0; $("#feed-label").textContent = mealCount >= 3 ? "今天吃飽了" : `餵食 ${mealCount + 1}/3`;
+    document.querySelector('[data-care="feed"]').disabled = mealCount >= 3;
+    const harvest = $("#harvest"), available = core.canHarvest(state, now()) && !hospital, bonus = core.equipmentBonus(gear);
+    harvest.disabled = !available; harvest.textContent = available ? `收成今日愛心 +${1 + bonus}` : `明天再來（${remaining(state.lastHarvestAt + core.DAY - state.maxSeenAt)}）`;
+    $("#equipment-bonus").textContent = bonus ? `已裝備 ${bonus} 格：所有愛心 +${bonus}` : "裝備付費道具可增加愛心";
+  }
+  function care(kind) { const result = core.care(state, kind, now(), equipped()); state = result.state; save(); render(); if (!result.ok) return message(result.reason === "meals-full" ? "今天三餐已經準備好了。" : "牠正在醫院休息。"); animateCare(kind); message(result.bonus ? `互動完成！餵食＋玩耍額外獲得 ${result.bonus} 顆愛心。` : ({ feed: "吃飽飽！", play: "玩得好開心！", clean: "洗香香了！" })[kind]); }
+  async function makeShareCard() {
+    const canvas = document.createElement("canvas"); canvas.width = 1200; canvas.height = 630; const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#1A1A1A"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#AAFF00"; ctx.fillRect(0, 0, canvas.width, 26); ctx.fillStyle = "#fff"; ctx.font = "bold 60px sans-serif"; ctx.fillText(state.name || "NOX 喵喵喵", 70, 120); ctx.font = "32px sans-serif"; ctx.fillStyle = "#AAFF00"; ctx.fillText(`${stageName[core.stageFor(state.activeDays)]} · ♥ ${state.hearts}`, 70, 178);
+    const image = new Image(); image.src = $("#cat").src; await image.decode(); ctx.imageSmoothingEnabled = false; ctx.drawImage(image, 760, 140, 330, 330); ctx.fillStyle = "#fff"; ctx.font = "bold 42px sans-serif"; ctx.fillText("NOXCAT FARM", 70, 560);
+    return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  }
+  async function sharePet() {
+    try { const blob = await makeShareCard(), file = new File([blob], "noxcat-pet.png", { type: "image/png" }); let complete = false;
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: "我的 NOX 喵喵喵", text: `${state.name || "NOX 喵喵喵"} 的農場日記`, files: [file] }); complete = true; }
+      else { const url = URL.createObjectURL(blob), link = Object.assign(document.createElement("a"), { href: url, download: "noxcat-pet.png" }); link.click(); URL.revokeObjectURL(url); complete = true; }
+      if (complete) { const result = core.share(state, now(), equipped()); state = result.state; save(); render(); message(`分享完成，獲得 ${result.awarded} 顆愛心！`); }
+    } catch (error) { if (error && error.name !== "AbortError") message("分享卡建立失敗，請再試一次。"); }
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    state = load(); render();
+    if (!state.name) $("#name-dialog").showModal(); $("#pet-name").value = state.name;
+    document.querySelectorAll("[data-care]").forEach((button) => button.addEventListener("click", () => care(button.dataset.care)));
+    $("#harvest").addEventListener("click", () => { const result = core.harvest(state, now(), equipped()); state = result.state; save(); render(); message(result.awarded ? `收下 ${result.awarded} 顆愛心！` : "今天的愛心已經收成過了。"); });
+    $("#confirm-follow").addEventListener("click", () => { state = core.revive(state, now()); save(); render(); message("謝謝你的支持！牠已經康復。") });
+    $("#share").addEventListener("click", sharePet); $("#open-settings").addEventListener("click", () => { $("#pet-name").value = state.name; $("#name-dialog").showModal(); });
+    $("#save-name").addEventListener("click", () => { const name = $("#pet-name").value.trim(); if (name) { state.name = name; save(); render(); } });
+    window.addEventListener("noxcat-equipment-changed", render);
+  });
+})();

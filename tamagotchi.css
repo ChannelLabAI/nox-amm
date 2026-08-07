@@ -1,0 +1,53 @@
+:root{color-scheme:dark;font-family:ui-rounded,"PingFang TC","Noto Sans TC",system-ui,sans-serif;background:#1a1a1a;color:#fff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -20%,#40552d,#1a1a1a 55%)}
+button,.follow{font:inherit;font-weight:800;cursor:pointer;border:0;border-radius:14px;min-height:48px;text-decoration:none}
+.game-shell{width:min(100%,470px);margin:auto;padding:20px 16px max(28px,env(safe-area-inset-bottom));text-align:center}
+.eyebrow{font-size:.72rem;letter-spacing:.2em;color:#aaff00;margin:0}
+.game-shell h1{font-size:clamp(2rem,9vw,2.8rem);margin:4px 0}
+.subtitle{margin:0 0 18px;color:#cad0c4}
+.farm{height:300px;position:relative;overflow:hidden;border:4px solid #101010;border-radius:22px;background:linear-gradient(#75ccef 0 63%,#7fbd4d 63%);box-shadow:0 8px 0 #080808}
+.status{position:absolute;z-index:3;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;gap:8px}
+.status span{background:#1a1a1ad9;border:2px solid #fff;border-radius:999px;padding:5px 9px;font-weight:700;font-size:.8rem}
+.cat-frame{position:absolute;z-index:2;left:50%;bottom:29px;transform:translateX(-50%);width:192px;height:192px;background:linear-gradient(135deg,#f5d675,#e28156);border-radius:48% 48% 42% 42%;box-shadow:0 8px #bd5f42;animation:idle-float 2.6s ease-in-out infinite}
+.cat-frame img{width:100%;height:100%;image-rendering:pixelated;object-fit:contain}
+.cat-frame img.care-feed{animation:care-feed .45s ease-in-out}
+.cat-frame img.care-play{animation:care-play .45s ease-in-out}
+.care-icon{position:absolute;z-index:4;left:50%;top:2px;transform:translateX(-50%);font-size:2rem;pointer-events:none;animation:care-icon .45s ease-out forwards}
+@keyframes idle-float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
+@keyframes care-feed{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes care-play{0%,25%,75%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes care-icon{0%{opacity:0;transform:translate(-50%,8px)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-20px)}}
+.grass{position:absolute;bottom:0;width:100%;height:34px;background:repeating-linear-gradient(90deg,#3e8b3b 0 12px,#4ba341 12px 24px)}
+.cloud{position:absolute;width:70px;height:18px;background:#ffffffb5;border-radius:30px;top:52px}
+.cloud:before,.cloud:after{content:"";position:absolute;background:#ffffffb5;border-radius:50%}
+.cloud:before{width:29px;height:29px;left:13px;bottom:3px}
+.cloud:after{width:22px;height:22px;left:35px;bottom:3px}
+.cloud-one{left:18px}
+.cloud-two{right:16px;top:92px;transform:scale(.7)}
+.message{min-height:42px;margin:16px 8px;color:#e8ece5}
+.warning{margin:0 0 12px;padding:10px;background:#674d22;border-radius:12px;color:#fff0bd}
+.actions,.utility{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.actions button,.utility button{display:grid;place-items:center;gap:2px;padding:8px;background:#e6f7c6;color:#1a1a1a;box-shadow:0 4px 0 #83ae57}
+.utility{margin-top:12px;grid-template-columns:repeat(2,1fr)}
+.utility button{background:#30362c;color:#fff;box-shadow:none;font-size:.78rem}
+.actions span{font-size:.85rem}
+.harvest-card{margin-top:16px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;background:#252525;border:2px solid #aaff00;border-radius:16px}
+.label,small{display:block;font-size:.78rem;color:#c7ceb9}
+.harvest-card strong{color:#ff799d;font-size:1.5rem}
+.harvest-card button,.hospital button{padding:9px 12px;background:#aaff00;color:#151515;font-size:.85rem}
+.harvest-card button:disabled{cursor:not-allowed;background:#565b51;color:#d5d8d0}
+.hospital{margin-top:16px;padding:17px;background:#563b47;border:2px solid #ff799d;border-radius:16px}
+.hospital h2{margin:0 0 8px}
+.hospital p{color:#ffe9ef}
+.follow{display:block;padding:14px;background:#fff;color:#1a1a1a;margin:12px 0}
+.hospital button{width:100%}
+dialog{max-width:min(94vw,450px);padding:0;border:2px solid #aaff00;border-radius:18px;background:#20231e;color:#fff}
+.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.dialog-actions button{padding:8px 14px}
+.dialog-actions button:last-child{background:#aaff00;color:#151515}
+#name-dialog form{padding:20px;text-align:left}
+#name-dialog input{display:block;width:100%;margin-top:7px;padding:10px;border-radius:8px;border:1px solid #aaff00;background:#151515;color:#fff}
+footer{font-size:.76rem;color:#9ba298;margin:20px 12px 0;line-height:1.5}
+@media (min-width:700px){.game-shell{padding-top:32px}
+}
