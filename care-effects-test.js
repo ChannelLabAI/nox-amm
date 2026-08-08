@@ -16,7 +16,7 @@ for (const asset of [
 }
 assert.doesNotMatch(source, /🍚|🎣|care-bubble|care-bubbles/);
 assert.ok(css.includes(".care-effect--feed{width:60px;height:48px}"));
-assert.ok(css.includes(".care-effect--play{left:60px;top:-62px;width:102px;height:102px;transform-origin:50% 100%}"));
+assert.ok(css.includes(".care-effect--play{left:60px;top:-17px;width:102px;height:102px;transform-origin:50% 100%}"));
 assert.ok(css.includes(".care-effect--clean{inset:0;width:144px;height:144px}"));
 assert.doesNotMatch(css, /\.care-bubble/);
 assert.match(source, /animateCare\(kind, core\.stageFor\(state\.activeDays\)\)/);
