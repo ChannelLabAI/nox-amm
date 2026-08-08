@@ -28,6 +28,16 @@
     play: "assets/care/noxcat-prop-play-wand-34x34.png",
     clean: "assets/care/noxcat-prop-clean-fullbody-48x48.png"
   });
+  // The three approved character stages do not share the same paw geometry.
+  // Keep care props positioned with the stage instead of applying one absolute
+  // coordinate to every sprite.
+  const CARE_EFFECT_POSITIONS = Object.freeze({
+    feed: Object.freeze({
+      kitten: Object.freeze({ left: 62, top: 131 }),
+      teen: Object.freeze({ left: 62, top: 116 }),
+      adult: Object.freeze({ left: 62, top: 116 })
+    })
+  });
   const EQUIPMENT_SLOT_ORDER = ["background", "hat", "clothes", "handheld"];
   const EQUIPMENT_Z_INDEX = { background: 1, hat: 3, clothes: 4, handheld: 5 };
   const now = () => Date.now(); const $ = (s) => document.querySelector(s);
@@ -60,14 +70,18 @@
     }));
     return layers;
   }
+  const careEffectPositionFor = (kind, stage) => CARE_EFFECT_POSITIONS[kind] && CARE_EFFECT_POSITIONS[kind][stage] || null;
   window.NoxCatEquipmentVisuals = Object.freeze({ EQUIPMENT_OVERLAYS, EQUIPMENT_SLOT_ORDER, overlayPathFor, overlayLayersFor, renderEquipmentVisuals });
-  function animateCare(kind) {
+  window.NoxCatCareEffects = Object.freeze({ CARE_EFFECT_POSITIONS, careEffectPositionFor });
+  function animateCare(kind, stage) {
     if (kind !== "feed" && kind !== "play" && kind !== "clean") return;
     const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
     cat.classList.remove("care-feed", "care-play", "care-clean"); void cat.offsetWidth; cat.classList.add(className);
     const effect = document.createElement("img");
     effect.className = `care-effect care-effect--${kind}`; effect.src = CARE_EFFECTS[kind]; effect.alt = "";
     effect.setAttribute("aria-hidden", "true");
+    const position = careEffectPositionFor(kind, stage);
+    if (position) { effect.style.left = `${position.left}px`; effect.style.top = `${position.top}px`; }
     frame.append(effect); setTimeout(() => { cat.classList.remove(className); effect.remove(); }, 550);
   }
   function render() {
@@ -84,7 +98,7 @@
     $("#equipment-bonus").textContent = bonus ? `已裝備 ${bonus} 格：所有愛心 +${bonus}` : "裝備付費道具可增加愛心";
     document.querySelectorAll("[data-menu-item]").forEach((item, index) => item.classList.toggle("is-selected", index === selectedMenu));
   }
-  function care(kind) { const result = core.care(state, kind, now(), equipped()); state = result.state; save(); render(); if (!result.ok) return message(result.reason === "meals-full" ? "今天三餐已經準備好了。" : "牠正在醫院休息。"); animateCare(kind); message(result.bonus ? `互動完成！餵食＋玩耍額外獲得 ${result.bonus} 顆愛心。` : ({ feed: "吃飽飽！", play: "玩得好開心！", clean: "洗香香了！" })[kind]); }
+  function care(kind) { const result = core.care(state, kind, now(), equipped()); state = result.state; save(); render(); if (!result.ok) return message(result.reason === "meals-full" ? "今天三餐已經準備好了。" : "牠正在醫院休息。"); animateCare(kind, core.stageFor(state.activeDays)); message(result.bonus ? `互動完成！餵食＋玩耍額外獲得 ${result.bonus} 顆愛心。` : ({ feed: "吃飽飽！", play: "玩得好開心！", clean: "洗香香了！" })[kind]); }
   function harvestHearts() { const result = core.harvest(state, now(), equipped()); state = result.state; save(); render(); message(result.awarded ? `收下 ${result.awarded} 顆愛心！` : "今天的愛心已經收成過了。"); }
   function openNameDialog() { $("#pet-name").value = state.name; $("#name-dialog").showModal(); }
   function moveMenu(direction) { selectedMenu = core.moveMenuCursor(selectedMenu, direction); render(); }
