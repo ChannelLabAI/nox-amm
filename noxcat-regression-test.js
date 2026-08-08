@@ -106,10 +106,21 @@ function loadShopIntegration(initialState) {
 
 test("shop prices form the documented 1-to-4-day progression", () => {
   const shop = loadShop();
-  assert.deepEqual(Array.from(shop.ITEMS, (entry) => entry.price).sort((a, b) => a - b), [2, 3, 4, 4, 5, 6, 7, 8]);
-  assert.equal(Math.min(...shop.ITEMS.map((entry) => entry.price / 2)), 1);
-  assert.equal(Math.max(...shop.ITEMS.map((entry) => entry.price / 2)), 4);
-  assert.ok(new Set(shop.ITEMS.map((entry) => entry.price / 2)).size > 1);
+  const baselineIds = new Set(["sunset", "night", "cap", "crown", "apron", "cape", "flower", "wand"]);
+  const baseline = shop.ITEMS.filter((entry) => baselineIds.has(entry.id));
+  assert.deepEqual(Array.from(baseline, (entry) => entry.price).sort((a, b) => a - b), [2, 3, 4, 4, 5, 6, 7, 8]);
+  assert.equal(Math.min(...baseline.map((entry) => entry.price / 2)), 1);
+  assert.equal(Math.max(...baseline.map((entry) => entry.price / 2)), 4);
+  assert.ok(new Set(baseline.map((entry) => entry.price / 2)).size > 1);
+});
+
+test("spider premium tier prices at or above the baseline ceiling", () => {
+  const shop = loadShop();
+  const premiumIds = ["spider-city", "spider-mask", "spider-suit"];
+  const premium = premiumIds.map((id) => shop.ITEMS.find((entry) => entry.id === id));
+  assert.ok(premium.every(Boolean), "all three spider items must exist in ITEMS");
+  assert.ok(premium.every((entry) => entry.price >= 8), "premium tier must price at/above the 8-heart baseline ceiling");
+  assert.deepEqual(premium.map((entry) => entry.price), [8, 9, 11], "spider-city <= spider-mask < spider-suit, ranked by original NOX price 16/18/22");
 });
 
 test("heart exchange deducts exactly once and never goes negative", () => {

@@ -9,7 +9,10 @@
     { id: "apron", slot: "clothes", icon: "👕", name: "農場圍裙", price: 4 },
     { id: "cape", slot: "clothes", icon: "🧥", name: "夜行披風", price: 6 },
     { id: "flower", slot: "handheld", icon: "🌻", name: "向日葵", price: 2 },
-    { id: "wand", slot: "handheld", icon: "🪄", name: "螢光魔杖", price: 8 }
+    { id: "wand", slot: "handheld", icon: "🪄", name: "螢光魔杖", price: 8 },
+    { id: "spider-city", slot: "background", icon: "🌃", name: "蛛網夜城", price: 8 },
+    { id: "spider-mask", slot: "hat", icon: "🕷️", name: "蛛網俠面罩", price: 9 },
+    { id: "spider-suit", slot: "clothes", icon: "🦸", name: "蛛網俠戰衣", price: 11 }
   ];
   let selected, purchasing = false;
   const $ = (s) => document.querySelector(s);
