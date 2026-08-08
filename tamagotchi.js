@@ -45,7 +45,17 @@
   const now = () => Date.now(); const $ = (s) => document.querySelector(s);
   let state;
   let selectedMenu = 0;
-  const load = () => { try { return core.normalize(JSON.parse(localStorage.getItem(STORAGE_KEY)), now()); } catch { return core.freshState(now()); } };
+  const freshState = () => {
+    const next = core.freshState(now());
+    if (TEST_MODE) next.activeDays = STAGE_ACTIVE_DAYS.adult;
+    return next;
+  };
+  const load = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved === null ? freshState() : core.normalize(JSON.parse(saved), now());
+    } catch { return freshState(); }
+  };
   const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   const equipped = () => { try { return { background: null, hat: null, clothes: null, handheld: null, ...JSON.parse(localStorage.getItem(core.EQUIPMENT_KEY)) }; } catch { return { background: null, hat: null, clothes: null, handheld: null }; } };
   const message = (text) => {
