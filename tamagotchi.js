@@ -1,6 +1,22 @@
 (() => {
   const STORAGE_KEY = "noxcat-tamagotchi-v1";
   const core = window.NoxCatCore;
+  // Update this table only when new paper-doll assets arrive; renderer logic is
+  // intentionally independent from asset paths and item art.
+  const EQUIPMENT_OVERLAYS = Object.freeze({
+    "spider-city": { adult: { default: "assets/equipment/spider/spider_city-background-96px.png" } },
+    "spider-mask": { adult: { default: "assets/equipment/spider/spider_mask-hat-overlay-48px.png" } },
+    "spider-suit": { adult: { default: "assets/equipment/spider/spider_suit-clothes-overlay-48px.png" } },
+    // Verification-only: provided preview images prove per-mood replacement.
+    "spider-preview": { adult: {
+      normal: "assets/equipment/spider/preview-dressed-normal-48px.png",
+      happy: "assets/equipment/spider/preview-dressed-happy-48px.png",
+      hungry: "assets/equipment/spider/preview-dressed-hungry-48px.png",
+      sick: "assets/equipment/spider/preview-dressed-sick-48px.png"
+    } }
+  });
+  const EQUIPMENT_SLOT_ORDER = ["background", "hat", "clothes", "handheld"];
+  const EQUIPMENT_Z_INDEX = { background: 1, hat: 3, clothes: 4, handheld: 5 };
   const now = () => Date.now(); const $ = (s) => document.querySelector(s);
   let state;
   let selectedMenu = 0;
@@ -11,6 +27,27 @@
   const remaining = (ms) => `約 ${Math.max(1, Math.ceil(Math.max(0, ms) / 3600000))} 小時`;
   const stageName = { egg: "蛋", kitten: "幼貓", teen: "少年貓", adult: "成貓" };
   const moodName = { normal: "精神飽滿", happy: "開心到發亮", hungry: "肚子餓了", sick: "正在醫院" };
+  const overlayPathFor = (itemId, stage, mood) => {
+    const byStage = EQUIPMENT_OVERLAYS[itemId] && EQUIPMENT_OVERLAYS[itemId][stage];
+    return byStage && (byStage[mood] || byStage.default) || null;
+  };
+  const overlayLayersFor = (gear, stage, mood) => EQUIPMENT_SLOT_ORDER.map((slot) => {
+    const itemId = gear && gear[slot], path = itemId && overlayPathFor(itemId, stage, mood);
+    return path ? { slot, itemId, path } : null;
+  }).filter(Boolean);
+  function renderEquipmentVisuals(gear, stage, mood) {
+    const container = $("#equipped-visual"); if (!container) return [];
+    const layers = overlayLayersFor(gear, stage, mood);
+    container.replaceChildren(...layers.map(({ slot, itemId, path }) => {
+      const image = document.createElement("img");
+      image.className = `equipment-overlay equipment-overlay--${slot}`;
+      image.dataset.slot = slot; image.dataset.itemId = itemId; image.src = path; image.alt = "";
+      image.style.zIndex = EQUIPMENT_Z_INDEX[slot];
+      return image;
+    }));
+    return layers;
+  }
+  window.NoxCatEquipmentVisuals = Object.freeze({ EQUIPMENT_OVERLAYS, EQUIPMENT_SLOT_ORDER, overlayPathFor, overlayLayersFor, renderEquipmentVisuals });
   function animateCare(kind) {
     if (kind !== "feed" && kind !== "play" && kind !== "clean") return;
     const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
@@ -31,6 +68,7 @@
     state = core.normalize(state, now()); save();
     const mood = core.mood(state, now()), stage = core.stageFor(state.activeDays), hospital = core.isHospitalized(state, now()), key = core.dayKey(state.maxSeenAt), gear = equipped();
     $("#cat").src = core.spriteFor(stage, mood); $("#cat").alt = `${state.name || "NOX 喵喵喵"}：${moodName[mood]}`;
+    renderEquipmentVisuals(gear, stage, mood);
     const stageLabel = $("#stage"); if (stageLabel) stageLabel.textContent = stageName[stage]; $("#mood").textContent = moodName[mood]; $("#hearts").textContent = state.hearts;
     $("#welcome").textContent = state.name ? `${state.name} 的農場日記` : "每天陪牠一下，收成愛心。";
     $("#warning").hidden = !core.warningDue(state, now()); $("#hospital").hidden = !hospital; $("#menu").hidden = hospital; $(".device-controls").hidden = hospital;
