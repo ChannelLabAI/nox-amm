@@ -20,4 +20,12 @@ for (const page of ["tamagotchi.html", "tamagotchi-test.html"]) {
   assert.match(html, /<section id="hospital" class="hospital" hidden>/);
 }
 
+assert.match(css, /background:url\("assets\/noxcat-paw-shell-v3-sara-final\.svg"\)/);
+assert.match(css, /\.screen\{position:absolute;z-index:1;left:20%;top:43\.8462%;width:60%;height:36\.1538%/);
+assert.match(css, /#menu-left\{left:25\.8%;top:83\.6923%/);
+assert.match(css, /#menu-confirm\{left:43\.8%;top:83\.6923%/);
+assert.match(css, /#menu-right\{left:61\.8%;top:83\.6923%/);
+assert.doesNotMatch(css, /\.device\{[^}]*border-radius:50%/);
+assert.match(fs.readFileSync("assets/noxcat-paw-shell-v3-sara-final.svg", "utf8"), /id="officialLogo"/);
+
 console.log("viewport layout contract tests passed");
