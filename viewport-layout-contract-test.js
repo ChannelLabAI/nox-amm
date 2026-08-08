@@ -20,15 +20,15 @@ for (const page of ["tamagotchi.html", "tamagotchi-test.html"]) {
   assert.match(html, /<section id="hospital" class="hospital" hidden>/);
 }
 
-assert.match(css, /background:url\("assets\/noxcat-paw-shell-v3-sara-final\.svg"\)/);
-assert.match(css, /\.device\{position:relative;width:min\(92vw,72svh\)/);
-assert.doesNotMatch(css, /width:min\(82vw,300px,46svh\)/);
-assert.match(css, /background:radial-gradient\(circle,#aaff00b3/);
-assert.match(css, /\.screen\{position:absolute;z-index:1;left:20%;top:43\.8462%;width:60%;height:36\.1538%/);
-assert.match(css, /#menu-left\{left:25\.8%;top:83\.6923%/);
-assert.match(css, /#menu-confirm\{left:43\.8%;top:83\.6923%/);
-assert.match(css, /#menu-right\{left:61\.8%;top:83\.6923%/);
+assert.match(css, /background:url\("assets\/noxcat-paw-shell-v4-sara\.svg"\)/);
+assert.match(css, /\.device\{width:min\(100%,51\.020408svh\);max-width:none;aspect-ratio:1000\/1960\}/);
+assert.doesNotMatch(css, /noxcat-paw-shell-v3-sara-final/);
+assert.match(css, /background:url\("assets\/noxcat-paw-button-v4-sara\.svg"\)/);
+assert.match(css, /\.screen\{position:absolute;z-index:1;left:13\.5%;top:33\.9286%;width:73%;height:40\.3061%/);
+assert.match(css, /#menu-left\{left:20\.4%;top:82\.602%;width:15\.2%;height:7\.7551%/);
+assert.match(css, /#menu-confirm\{left:42\.4%;top:82\.602%;width:15\.2%;height:7\.7551%/);
+assert.match(css, /#menu-right\{left:64\.4%;top:82\.602%;width:15\.2%;height:7\.7551%/);
 assert.doesNotMatch(css, /\.device\{[^}]*border-radius:50%/);
-assert.match(fs.readFileSync("assets/noxcat-paw-shell-v3-sara-final.svg", "utf8"), /id="officialLogo"/);
+assert.match(fs.readFileSync("assets/noxcat-paw-shell-v4-sara.svg", "utf8"), /id="officialLogo"/);
 
 console.log("viewport layout contract tests passed");
