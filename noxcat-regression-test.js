@@ -73,7 +73,7 @@ function loadShop() {
   return context.window.NoxCatShop;
 }
 
-function loadShopIntegration(initialState) {
+function loadShopIntegration(initialState, testMode) {
   const elements = new Map(), listeners = new Map(), storage = new Map();
   let buyButtons = [], buyButtonsHtml = "";
   storage.set("noxcat-tamagotchi-v1", JSON.stringify(initialState));
@@ -94,7 +94,7 @@ function loadShopIntegration(initialState) {
   const context = {
     document,
     localStorage: { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
-    window: { dispatchEvent() {} },
+    window: { dispatchEvent() {}, NOXCAT_TEST_MODE: Boolean(testMode) },
     Event: class Event {},
     console
   };
@@ -157,6 +157,27 @@ test("shop disables unaffordable items with a clear label", () => {
   assert.equal(flower.disabled, true);
   assert.equal(flower.textContent, "愛心不足");
   assert.equal(JSON.parse(storage.get("noxcat-tamagotchi-v1")).hearts, 1);
+  assert.equal(storage.has("noxcat_owned_items"), false);
+});
+
+test("test mode bypasses heart cost without touching balance", () => {
+  const { context, elements, storage } = loadShopIntegration({ hearts: 0, name: "Mochi" }, true);
+  const buttons = context.document.querySelectorAll("[data-buy]");
+  const wand = buttons.find((button) => button.dataset.buy === "wand");
+  assert.equal(wand.disabled, false, "test mode must not disable items for insufficient hearts");
+  assert.equal(wand.textContent, "兌換");
+  wand.onclick();
+  elements.get("#confirm-purchase").onclick();
+  assert.equal(JSON.parse(storage.get("noxcat-tamagotchi-v1")).hearts, 0, "test mode must not deduct hearts");
+  assert.deepEqual(JSON.parse(storage.get("noxcat_owned_items")), ["wand"]);
+  assert.match(elements.get("#shop-status").textContent, /測試模式/);
+});
+
+test("production mode (test flag unset) keeps the real heart cost enforced", () => {
+  const { context, storage } = loadShopIntegration({ hearts: 0 }, false);
+  const wand = context.document.querySelectorAll("[data-buy]").find((button) => button.dataset.buy === "wand");
+  assert.equal(wand.disabled, true, "without the test flag, insufficient hearts must still block purchase");
+  assert.equal(wand.textContent, "愛心不足");
   assert.equal(storage.has("noxcat_owned_items"), false);
 });
 

@@ -14,6 +14,7 @@
     { id: "spider-mask", slot: "hat", icon: "🕷️", name: "蛛網俠面罩", price: 9 },
     { id: "spider-suit", slot: "clothes", icon: "🦸", name: "蛛網俠戰衣", price: 11 }
   ];
+  const TEST_MODE = typeof window !== "undefined" && window.NOXCAT_TEST_MODE === true;
   let selected, purchasing = false;
   const $ = (s) => document.querySelector(s);
   const load = (key, fallback) => { try { const value = JSON.parse(localStorage.getItem(key)); return value == null ? fallback : value; } catch { return fallback; } };
@@ -28,14 +29,14 @@
     const hearts = Math.max(0, Number(state && state.hearts) || 0);
     if (!entry) return { ok: false, reason: "找不到這件道具。", state, owned: mine };
     if (mine.includes(entry.id)) return { ok: false, reason: "你已經擁有這件道具。", state, owned: mine };
-    if (hearts < entry.price) return { ok: false, reason: `愛心不足：需要 ${entry.price} 顆，目前只有 ${hearts} 顆。`, state, owned: mine };
-    return { ok: true, state: { ...state, hearts: hearts - entry.price }, owned: [...mine, entry.id] };
+    if (!TEST_MODE && hearts < entry.price) return { ok: false, reason: `愛心不足：需要 ${entry.price} 顆，目前只有 ${hearts} 顆。`, state, owned: mine };
+    return { ok: true, state: { ...state, hearts: TEST_MODE ? hearts : hearts - entry.price }, owned: [...mine, entry.id] };
   }
   function render() {
     const mine = owned(), gear = equipped(), hearts = heartBalance();
-    status(`目前有 ${hearts} 顆愛心；兌換道具不會連接錢包。`);
+    status(TEST_MODE ? `測試模式：兌換不扣愛心，目前有 ${hearts} 顆愛心。` : `目前有 ${hearts} 顆愛心；兌換道具不會連接錢包。`);
     $("#shop-items").innerHTML = ITEMS.map((entry) => {
-      const hasItem = mine.includes(entry.id), affordable = hearts >= entry.price;
+      const hasItem = mine.includes(entry.id), affordable = TEST_MODE || hearts >= entry.price;
       const label = hasItem ? "已擁有" : affordable ? "兌換" : "愛心不足";
       return `<article class="shop-item"><span class="item-icon">${entry.icon}</span><div><strong>${entry.name}</strong><p>${entry.slot} · ♥ ${entry.price}</p></div><button data-buy="${entry.id}" ${hasItem || !affordable ? "disabled" : ""}>${label}</button></article>`;
     }).join("");
@@ -44,7 +45,7 @@
     document.querySelectorAll("[data-buy]").forEach((button) => button.onclick = () => confirm(item(button.dataset.buy)));
     document.querySelectorAll("[data-equip]").forEach((button) => button.onclick = () => toggleEquip(button.dataset.equip));
   }
-  function confirm(entry) { selected = entry; $("#confirm-copy").textContent = `使用 ${entry.price} 顆愛心兌換「${entry.name}」。`; $("#confirm-dialog").showModal(); }
+  function confirm(entry) { selected = entry; $("#confirm-copy").textContent = TEST_MODE ? `測試模式：免費解鎖「${entry.name}」，不扣愛心。` : `使用 ${entry.price} 顆愛心兌換「${entry.name}」。`; $("#confirm-wallet-note").textContent = TEST_MODE ? "測試模式：不扣愛心、不連接錢包。" : "愛心會立即扣除；本流程不會連接錢包或發送鏈上交易。"; $("#confirm-dialog").showModal(); }
   function toggleEquip(id) { const entry = item(id), gear = equipped(); gear[entry.slot] = gear[entry.slot] === id ? null : id; save(EQUIPPED_KEY, gear); render(); window.dispatchEvent(new Event("noxcat-equipment-changed")); }
   function buy() {
     if (purchasing || !selected) return;
@@ -54,7 +55,7 @@
       if (!result.ok) throw new Error(result.reason);
       save(STATE_KEY, result.state); save(OWNED_KEY, result.owned);
       $("#confirm-dialog").close(); render();
-      status(`兌換成功！已扣除 ${selected.price} 顆愛心，道具已加入收藏。`);
+      status(TEST_MODE ? `測試模式：「${selected.name}」已加入收藏，未扣愛心。` : `兌換成功！已扣除 ${selected.price} 顆愛心，道具已加入收藏。`);
       window.dispatchEvent(new Event("noxcat-state-changed"));
     } catch (error) { status(error.message || "兌換失敗，未扣除愛心。"); }
     finally { purchasing = false; $("#confirm-purchase").disabled = false; }
