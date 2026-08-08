@@ -4,9 +4,17 @@
   // Update this table only when new paper-doll assets arrive; renderer logic is
   // intentionally independent from asset paths and item art.
   const EQUIPMENT_OVERLAYS = Object.freeze({
-    "spider-city": { adult: { default: "assets/equipment/spider/spider_city-background-96px.png" } },
-    "spider-mask": { adult: { default: "assets/equipment/spider/spider_mask-hat-overlay-48px.png" } },
-    "spider-suit": { adult: { default: "assets/equipment/spider/spider_suit-clothes-overlay-48px.png" } },
+    sunset: { adult: { default: "assets/equipment/sara/sunset-background-96px.png" } },
+    night: { adult: { default: "assets/equipment/sara/night-background-96px.png" } },
+    cap: { adult: { default: "assets/equipment/sara/cap-hat-overlay-48px.png" } },
+    crown: { adult: { default: "assets/equipment/sara/crown-hat-overlay-48px.png" } },
+    apron: { adult: { default: "assets/equipment/sara/apron-clothes-overlay-48px.png" } },
+    cape: { adult: { default: "assets/equipment/sara/cape-clothes-overlay-48px.png" } },
+    flower: { adult: { default: "assets/equipment/sara/flower-handheld-overlay-48px.png" } },
+    wand: { adult: { default: "assets/equipment/sara/wand-handheld-overlay-48px.png" } },
+    "spider-city": { adult: { default: "assets/equipment/sara/spider-city-background-96px.png" } },
+    "spider-mask": { adult: { default: "assets/equipment/sara/spider-mask-hat-overlay-48px.png" } },
+    "spider-suit": { adult: { default: "assets/equipment/sara/spider-suit-clothes-overlay-48px.png" } },
     // Verification-only: provided preview images prove per-mood replacement.
     "spider-preview": { adult: {
       normal: "assets/equipment/spider/preview-dressed-normal-48px.png",
@@ -14,6 +22,11 @@
       hungry: "assets/equipment/spider/preview-dressed-hungry-48px.png",
       sick: "assets/equipment/spider/preview-dressed-sick-48px.png"
     } }
+  });
+  const CARE_EFFECTS = Object.freeze({
+    feed: "assets/care/noxcat-prop-feed-bowl-20x16.png",
+    play: "assets/care/noxcat-prop-play-wand-34x34.png",
+    clean: "assets/care/noxcat-prop-clean-fullbody-48x48.png"
   });
   const EQUIPMENT_SLOT_ORDER = ["background", "hat", "clothes", "handheld"];
   const EQUIPMENT_Z_INDEX = { background: 1, hat: 3, clothes: 4, handheld: 5 };
@@ -52,16 +65,9 @@
     if (kind !== "feed" && kind !== "play" && kind !== "clean") return;
     const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
     cat.classList.remove("care-feed", "care-play", "care-clean"); void cat.offsetWidth; cat.classList.add(className);
-    const effect = document.createElement("span"); effect.setAttribute("aria-hidden", "true");
-    if (kind === "clean") {
-      effect.className = "care-bubbles";
-      [["16px","14%","18%","0ms"],["30px","43%","9%","35ms"],["22px","70%","22%","10ms"],["38px","18%","47%","55ms"],["18px","58%","43%","20ms"],["28px","76%","56%","70ms"],["24px","36%","70%","40ms"],["34px","61%","73%","85ms"]].forEach(([size, x, y, delay]) => {
-        const bubble = document.createElement("span"); bubble.className = "care-bubble";
-        bubble.style.setProperty("--bubble-size", size); bubble.style.setProperty("--bubble-x", x); bubble.style.setProperty("--bubble-y", y); bubble.style.setProperty("--bubble-delay", delay); effect.append(bubble);
-      });
-    } else {
-      effect.className = `care-icon care-icon--${kind}`; effect.textContent = ({ feed: "🍚", play: "🎣" })[kind];
-    }
+    const effect = document.createElement("img");
+    effect.className = `care-effect care-effect--${kind}`; effect.src = CARE_EFFECTS[kind]; effect.alt = "";
+    effect.setAttribute("aria-hidden", "true");
     frame.append(effect); setTimeout(() => { cat.classList.remove(className); effect.remove(); }, 550);
   }
   function render() {
