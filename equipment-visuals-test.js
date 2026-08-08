@@ -23,12 +23,16 @@ for (const [itemId, path] of Object.entries({
 assert.equal(visuals.overlayPathFor("cap", "teen", "happy"), null);
 assert.equal(visuals.overlayLayersFor({ hat: "cap" }, "teen", "happy").length, 0);
 
-const container = { children: [], replaceChildren(...children) { this.children = children; } };
-context.document.querySelector = (selector) => selector === "#equipped-visual" ? container : null;
+const backgroundContainer = { children: [], replaceChildren(...children) { this.children = children; } };
+const characterContainer = { children: [], replaceChildren(...children) { this.children = children; } };
+context.document.querySelector = (selector) => selector === "#equipped-background" ? backgroundContainer : selector === "#equipped-visual" ? characterContainer : null;
 context.document.createElement = () => ({ className: "", dataset: {}, style: {}, src: "", alt: "" });
 visuals.renderEquipmentVisuals({ background: "spider-city", hat: "spider-mask", clothes: "spider-suit" }, "adult", "happy");
-assert.equal(container.children.map((image) => image.dataset.slot).join(","), "background,hat,clothes");
-assert.equal(container.children.map((image) => image.style.zIndex).join(","), "1,3,4");
+assert.equal(backgroundContainer.children.map((image) => image.dataset.slot).join(","), "background");
+assert.equal(backgroundContainer.children.map((image) => image.style.zIndex).join(","), "1");
+assert.equal(characterContainer.children.map((image) => image.dataset.slot).join(","), "hat,clothes");
+assert.equal(characterContainer.children.map((image) => image.style.zIndex).join(","), "3,4");
 visuals.renderEquipmentVisuals({ hat: "cap" }, "teen", "happy");
-assert.equal(container.children.length, 0);
+assert.equal(backgroundContainer.children.length, 0);
+assert.equal(characterContainer.children.length, 0);
 console.log("equipment visual config tests passed");

@@ -17,8 +17,13 @@ for (const page of ["tamagotchi.html", "tamagotchi-test.html"]) {
   assert.match(html, /<section class="device"/);
   assert.match(html, /class="device-controls"/);
   assert.match(html, /class="screen"/);
+  assert.match(html, /<div id="equipped-background" aria-hidden="true"><\/div>/);
   assert.match(html, /<section id="hospital" class="hospital" hidden>/);
 }
+
+assert.match(css, /#equipped-background\{position:absolute;z-index:1;inset:0;pointer-events:none\}/);
+assert.match(css, /\.farm>#equipped-background \.equipment-overlay\{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;object-fit:fill\}/);
+assert.match(css, /\.cat-frame>#equipped-visual\{position:absolute;inset:0;pointer-events:none\}/);
 
 assert.match(css, /background:url\("assets\/noxcat-paw-shell-v4-sara\.svg"\)/);
 assert.match(css, /\.device\{width:min\(100%,51\.020408svh\);max-width:none;aspect-ratio:1000\/1960\}/);

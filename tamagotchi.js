@@ -40,6 +40,8 @@
   });
   const EQUIPMENT_SLOT_ORDER = ["background", "hat", "clothes", "handheld"];
   const EQUIPMENT_Z_INDEX = { background: 1, hat: 3, clothes: 4, handheld: 5 };
+  const TEST_MODE = window.NOXCAT_TEST_MODE === true;
+  const STAGE_ACTIVE_DAYS = Object.freeze({ egg: 0, kitten: 3, teen: 9, adult: 16 });
   const now = () => Date.now(); const $ = (s) => document.querySelector(s);
   let state;
   let selectedMenu = 0;
@@ -59,20 +61,33 @@
     return path ? { slot, itemId, path } : null;
   }).filter(Boolean);
   function renderEquipmentVisuals(gear, stage, mood) {
-    const container = $("#equipped-visual"); if (!container) return [];
+    const backgroundContainer = $("#equipped-background"), characterContainer = $("#equipped-visual");
     const layers = overlayLayersFor(gear, stage, mood);
-    container.replaceChildren(...layers.map(({ slot, itemId, path }) => {
-      const image = document.createElement("img");
-      image.className = `equipment-overlay equipment-overlay--${slot}`;
-      image.dataset.slot = slot; image.dataset.itemId = itemId; image.src = path; image.alt = "";
-      image.style.zIndex = EQUIPMENT_Z_INDEX[slot];
-      return image;
-    }));
+    const renderLayers = (container, selectedLayers) => {
+      if (!container) return;
+      container.replaceChildren(...selectedLayers.map(({ slot, itemId, path }) => {
+        const image = document.createElement("img");
+        image.className = `equipment-overlay equipment-overlay--${slot}`;
+        image.dataset.slot = slot; image.dataset.itemId = itemId; image.src = path; image.alt = "";
+        image.style.zIndex = EQUIPMENT_Z_INDEX[slot];
+        return image;
+      }));
+    };
+    renderLayers(backgroundContainer, layers.filter(({ slot }) => slot === "background"));
+    renderLayers(characterContainer, layers.filter(({ slot }) => slot !== "background"));
     return layers;
+  }
+  function setTestStage(stage) {
+    if (!TEST_MODE || !Object.hasOwn(STAGE_ACTIVE_DAYS, stage)) return false;
+    state = core.normalize(state, now());
+    state.activeDays = STAGE_ACTIVE_DAYS[stage];
+    save(); render();
+    return true;
   }
   const careEffectPositionFor = (kind, stage) => CARE_EFFECT_POSITIONS[kind] && CARE_EFFECT_POSITIONS[kind][stage] || null;
   window.NoxCatEquipmentVisuals = Object.freeze({ EQUIPMENT_OVERLAYS, EQUIPMENT_SLOT_ORDER, overlayPathFor, overlayLayersFor, renderEquipmentVisuals });
   window.NoxCatCareEffects = Object.freeze({ CARE_EFFECT_POSITIONS, careEffectPositionFor });
+  if (TEST_MODE) window.NoxCatTest = Object.freeze({ stageActiveDays: STAGE_ACTIVE_DAYS, setStage: setTestStage });
   function animateCare(kind, stage) {
     if (kind !== "feed" && kind !== "play" && kind !== "clean") return;
     const cat = $("#cat"), frame = cat.parentElement, className = `care-${kind}`;
