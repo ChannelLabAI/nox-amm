@@ -25,7 +25,7 @@
   });
   const CARE_EFFECTS = Object.freeze({
     feed: "assets/care/noxcat-prop-feed-bowl-20x16.png",
-    play: "assets/care/noxcat-prop-play-wand-34x34.png",
+    play: "assets/care/noxcat-prop-play-yarn-ball-34x34.png",
     clean: "assets/care/noxcat-prop-clean-fullbody-48x48.png"
   });
   // The three approved character stages do not share the same paw geometry.

@@ -8,7 +8,7 @@ const source = fs.readFileSync("tamagotchi.js", "utf8");
 const css = fs.readFileSync("tamagotchi.css", "utf8");
 for (const asset of [
   "assets/care/noxcat-prop-feed-bowl-20x16.png",
-  "assets/care/noxcat-prop-play-wand-34x34.png",
+  "assets/care/noxcat-prop-play-yarn-ball-34x34.png",
   "assets/care/noxcat-prop-clean-fullbody-48x48.png"
 ]) {
   assert.ok(source.includes(asset), `${asset} must be wired into animateCare`);
@@ -16,7 +16,7 @@ for (const asset of [
 }
 assert.doesNotMatch(source, /🍚|🎣|care-bubble|care-bubbles/);
 assert.ok(css.includes(".care-effect--feed{width:60px;height:48px}"));
-assert.ok(css.includes(".care-effect--play{left:68px;top:-17px;width:102px;height:102px"));
+assert.ok(css.includes(".care-effect--play{left:60px;top:-62px;width:102px;height:102px;transform-origin:50% 100%}"));
 assert.ok(css.includes(".care-effect--clean{inset:0;width:144px;height:144px}"));
 assert.doesNotMatch(css, /\.care-bubble/);
 assert.match(source, /animateCare\(kind, core\.stageFor\(state\.activeDays\)\)/);
