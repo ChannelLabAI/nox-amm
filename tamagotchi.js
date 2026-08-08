@@ -48,7 +48,11 @@
   const load = () => { try { return core.normalize(JSON.parse(localStorage.getItem(STORAGE_KEY)), now()); } catch { return core.freshState(now()); } };
   const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   const equipped = () => { try { return { background: null, hat: null, clothes: null, handheld: null, ...JSON.parse(localStorage.getItem(core.EQUIPMENT_KEY)) }; } catch { return { background: null, hat: null, clothes: null, handheld: null }; } };
-  const message = (text) => { $("#message").textContent = text; };
+  const message = (text) => {
+    const element = $("#message");
+    element.textContent = text;
+    element.classList.add("is-visible");
+  };
   const remaining = (ms) => `約 ${Math.max(1, Math.ceil(Math.max(0, ms) / 3600000))} 小時`;
   const stageName = { egg: "蛋", kitten: "幼貓", teen: "少年貓", adult: "成貓" };
   const moodName = { normal: "精神飽滿", happy: "開心到發亮", hungry: "肚子餓了", sick: "正在醫院" };
