@@ -1,19 +1,61 @@
 (() => {
-  const CONFIG = Object.freeze({ chainId: "0xa4b1", chainName: "Arbitrum One", tokenAddress: "0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55", tokenDecimals: 18, recipient: "0xeEC9Fb7597B587a88aD9dcC6582b3A89686dFb5E" });
+  const STATE_KEY = "noxcat-tamagotchi-v1";
   const OWNED_KEY = "noxcat_owned_items", EQUIPPED_KEY = "noxcat_equipped";
-  const ITEMS = [{ id: "sunset", slot: "background", icon: "🌇", name: "夕陽農場", price: "10" }, { id: "night", slot: "background", icon: "🌌", name: "星夜農場", price: "12" }, { id: "cap", slot: "hat", icon: "🧢", name: "嫩芽帽", price: "8" }, { id: "crown", slot: "hat", icon: "👑", name: "小皇冠", price: "15" }, { id: "apron", slot: "clothes", icon: "👕", name: "農場圍裙", price: "10" }, { id: "cape", slot: "clothes", icon: "🧥", name: "夜行披風", price: "14" }, { id: "flower", slot: "handheld", icon: "🌻", name: "向日葵", price: "6" }, { id: "wand", slot: "handheld", icon: "🪄", name: "螢光魔杖", price: "16" }];
-  let selected, account, purchasing = false;
-  const $ = (s) => document.querySelector(s); const load = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }; const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-  const owned = () => load(OWNED_KEY, []); const equipped = () => ({ background: null, hat: null, clothes: null, handheld: null, ...load(EQUIPPED_KEY, {}) });
+  const ITEMS = [
+    { id: "sunset", slot: "background", icon: "🌇", name: "夕陽農場", price: 4 },
+    { id: "night", slot: "background", icon: "🌌", name: "星夜農場", price: 5 },
+    { id: "cap", slot: "hat", icon: "🧢", name: "嫩芽帽", price: 3 },
+    { id: "crown", slot: "hat", icon: "👑", name: "小皇冠", price: 7 },
+    { id: "apron", slot: "clothes", icon: "👕", name: "農場圍裙", price: 4 },
+    { id: "cape", slot: "clothes", icon: "🧥", name: "夜行披風", price: 6 },
+    { id: "flower", slot: "handheld", icon: "🌻", name: "向日葵", price: 2 },
+    { id: "wand", slot: "handheld", icon: "🪄", name: "螢光魔杖", price: 8 }
+  ];
+  let selected, purchasing = false;
+  const $ = (s) => document.querySelector(s);
+  const load = (key, fallback) => { try { const value = JSON.parse(localStorage.getItem(key)); return value == null ? fallback : value; } catch { return fallback; } };
+  const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+  const owned = () => load(OWNED_KEY, []);
+  const equipped = () => ({ background: null, hat: null, clothes: null, handheld: null, ...load(EQUIPPED_KEY, {}) });
+  const petState = () => load(STATE_KEY, {});
+  const heartBalance = () => Math.max(0, Number(petState().hearts) || 0);
   const item = (id) => ITEMS.find((candidate) => candidate.id === id);
-  const status = (text) => { $("#wallet-status").textContent = text; };
-  const units = (value) => { const [whole, fraction = ""] = value.split("."); return `0x${(BigInt(whole) * 10n ** BigInt(CONFIG.tokenDecimals) + BigInt((fraction + "0".repeat(CONFIG.tokenDecimals)).slice(0, CONFIG.tokenDecimals))).toString(16)}`; };
-  const calldata = (to, amount) => `0xa9059cbb${to.slice(2).toLowerCase().padStart(64, "0")}${BigInt(amount).toString(16).padStart(64, "0")}`;
-  async function ensureWallet() { if (!window.ethereum) throw new Error("找不到相容錢包，請安裝或開啟 MetaMask。 "); const accounts = await ethereum.request({ method: "eth_requestAccounts" }); account = accounts[0]; const chain = await ethereum.request({ method: "eth_chainId" }); if (chain !== CONFIG.chainId) { try { await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CONFIG.chainId }] }); } catch (error) { throw new Error("請在錢包切換到 Arbitrum One 後再試。 "); } } status(`已連接 ${account.slice(0, 6)}…${account.slice(-4)}（Arbitrum One）`); }
-  function render() { const mine = owned(), gear = equipped(); $("#shop-items").innerHTML = ITEMS.map((entry) => `<article class="shop-item"><span class="item-icon">${entry.icon}</span><div><strong>${entry.name}</strong><p>${entry.slot} · ${entry.price} NOX</p></div><button data-buy="${entry.id}" ${mine.includes(entry.id) ? "disabled" : ""}>${mine.includes(entry.id) ? "已擁有" : "購買"}</button></article>`).join(""); const list = mine.map((id) => { const entry = item(id); return `<div><span>${entry.icon} ${entry.name}</span><button data-equip="${id}">${gear[entry.slot] === id ? "卸下" : "裝備"}</button></div>`; }).join(""); $("#owned-items").hidden = !mine.length; $("#owned-list").innerHTML = list; document.querySelectorAll("[data-buy]").forEach((button) => button.onclick = () => confirm(item(button.dataset.buy))); document.querySelectorAll("[data-equip]").forEach((button) => button.onclick = () => toggleEquip(button.dataset.equip)); }
-  function confirm(entry) { selected = entry; $("#confirm-copy").textContent = `將轉出 ${entry.price} NOX 到指定收款地址，以購買「${entry.name}」。`; $("#recipient-address").textContent = CONFIG.recipient; $("#confirm-dialog").showModal(); }
+  const status = (text) => { $("#shop-status").textContent = text; };
+  function exchangeHearts(state, mine, entry) {
+    const hearts = Math.max(0, Number(state && state.hearts) || 0);
+    if (!entry) return { ok: false, reason: "找不到這件道具。", state, owned: mine };
+    if (mine.includes(entry.id)) return { ok: false, reason: "你已經擁有這件道具。", state, owned: mine };
+    if (hearts < entry.price) return { ok: false, reason: `愛心不足：需要 ${entry.price} 顆，目前只有 ${hearts} 顆。`, state, owned: mine };
+    return { ok: true, state: { ...state, hearts: hearts - entry.price }, owned: [...mine, entry.id] };
+  }
+  function render() {
+    const mine = owned(), gear = equipped(), hearts = heartBalance();
+    status(`目前有 ${hearts} 顆愛心；兌換道具不會連接錢包。`);
+    $("#shop-items").innerHTML = ITEMS.map((entry) => {
+      const hasItem = mine.includes(entry.id), affordable = hearts >= entry.price;
+      const label = hasItem ? "已擁有" : affordable ? "兌換" : "愛心不足";
+      return `<article class="shop-item"><span class="item-icon">${entry.icon}</span><div><strong>${entry.name}</strong><p>${entry.slot} · ♥ ${entry.price}</p></div><button data-buy="${entry.id}" ${hasItem || !affordable ? "disabled" : ""}>${label}</button></article>`;
+    }).join("");
+    const list = mine.map((id) => { const entry = item(id); return `<div><span>${entry.icon} ${entry.name}</span><button data-equip="${id}">${gear[entry.slot] === id ? "卸下" : "裝備"}</button></div>`; }).join("");
+    $("#owned-items").hidden = !mine.length; $("#owned-list").innerHTML = list;
+    document.querySelectorAll("[data-buy]").forEach((button) => button.onclick = () => confirm(item(button.dataset.buy)));
+    document.querySelectorAll("[data-equip]").forEach((button) => button.onclick = () => toggleEquip(button.dataset.equip));
+  }
+  function confirm(entry) { selected = entry; $("#confirm-copy").textContent = `使用 ${entry.price} 顆愛心兌換「${entry.name}」。`; $("#confirm-dialog").showModal(); }
   function toggleEquip(id) { const entry = item(id), gear = equipped(); gear[entry.slot] = gear[entry.slot] === id ? null : id; save(EQUIPPED_KEY, gear); render(); window.dispatchEvent(new Event("noxcat-equipment-changed")); }
-  async function buy() { if (purchasing) return; purchasing = true; $("#confirm-purchase").disabled = true; try { await ensureWallet(); status("正在等待錢包簽名…"); const hash = await ethereum.request({ method: "eth_sendTransaction", params: [{ from: account, to: CONFIG.tokenAddress, data: calldata(CONFIG.recipient, BigInt(units(selected.price))) }] }); status("交易已送出，正在等待 Arbitrum 確認…"); let receipt; for (let attempts = 0; attempts < 90; attempts += 1) { receipt = await ethereum.request({ method: "eth_getTransactionReceipt", params: [hash] }); if (receipt) break; await new Promise((resolve) => setTimeout(resolve, 2000)); } if (!receipt || receipt.status !== "0x1") throw new Error("交易未成功確認，道具不會解鎖。請到錢包檢查交易狀態。"); save(OWNED_KEY, [...new Set([...owned(), selected.id])]); $("#confirm-dialog").close(); render(); status("交易確認成功！道具已加入收藏，可選擇是否裝備。"); } catch (error) { status(error && error.code === 4001 ? "已取消錢包簽名，未購買任何道具。" : (error.message || "交易失敗，未購買任何道具。")); } finally { purchasing = false; $("#confirm-purchase").disabled = false; } }
+  function buy() {
+    if (purchasing || !selected) return;
+    purchasing = true; $("#confirm-purchase").disabled = true;
+    try {
+      const result = exchangeHearts(petState(), owned(), selected);
+      if (!result.ok) throw new Error(result.reason);
+      save(STATE_KEY, result.state); save(OWNED_KEY, result.owned);
+      $("#confirm-dialog").close(); render();
+      status(`兌換成功！已扣除 ${selected.price} 顆愛心，道具已加入收藏。`);
+      window.dispatchEvent(new Event("noxcat-state-changed"));
+    } catch (error) { status(error.message || "兌換失敗，未扣除愛心。"); }
+    finally { purchasing = false; $("#confirm-purchase").disabled = false; }
+  }
   document.addEventListener("DOMContentLoaded", () => { $("#open-shop").onclick = () => { render(); $("#shop-dialog").showModal(); }; $("#confirm-purchase").onclick = buy; document.querySelectorAll("[data-close]").forEach((button) => button.onclick = () => $("#" + button.dataset.close).close()); });
-  window.NoxCatShop = { CONFIG, ITEMS, units, calldata };
+  window.NoxCatShop = { STATE_KEY, ITEMS, exchangeHearts, render, buy };
 })();

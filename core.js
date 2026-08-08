@@ -9,7 +9,7 @@
   const SLOTS = ["background", "hat", "clothes", "handheld"];
   const MENU_ITEMS = ["feed", "play", "clean", "harvest", "share", "name", "shop"];
   const dayKey = (time) => new Date(time).toISOString().slice(0, 10);
-  const freshState = (now) => ({ bornAt: now, maxSeenAt: now, lastCareAt: now, lastHarvestAt: 0, hearts: 0, activeDays: 0, activeDay: "", feeds: {}, playedDays: {}, bonusDays: {}, name: "", revived: false });
+  const freshState = (now) => ({ bornAt: now, maxSeenAt: now, lastCareAt: now, lastHarvestAt: 0, lastShareAt: 0, hearts: 0, activeDays: 0, activeDay: "", feeds: {}, playedDays: {}, bonusDays: {}, name: "", revived: false });
   function normalize(state, now) {
     const source = state || {};
     const safeNow = Math.max(Number(now) || 0, Number(source.maxSeenAt) || 0);
@@ -48,9 +48,15 @@
     next.lastHarvestAt = next.maxSeenAt;
     return { state: next, awarded: award(next, 1, equipped) };
   }
-  function share(state, now, equipped) { const next = normalize(state, now); return { state: next, awarded: award(next, 1, equipped) }; }
+  function canShare(state, now) { return effectiveNow(state, now) - (state.lastShareAt || 0) >= DAY; }
+  function share(state, now, equipped) {
+    const next = normalize(state, now);
+    if (!canShare(next, now)) return { state: next, awarded: 0 };
+    next.lastShareAt = next.maxSeenAt;
+    return { state: next, awarded: award(next, 1, equipped) };
+  }
   function revive(state, now) { const next = normalize(state, now); next.lastCareAt = next.maxSeenAt; next.revived = true; return next; }
   function moveMenuCursor(index, direction) { return (Number(index) + Number(direction) + MENU_ITEMS.length) % MENU_ITEMS.length; }
   function menuItemAt(index) { return MENU_ITEMS[((Number(index) % MENU_ITEMS.length) + MENU_ITEMS.length) % MENU_ITEMS.length]; }
-  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, MENU_ITEMS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, spritePrefixFor, spriteFor, equipmentBonus, care, canHarvest, harvest, share, revive, moveMenuCursor, menuItemAt };
+  return { DAY, NEGLECT_DAYS, EQUIPMENT_KEY, SLOTS, MENU_ITEMS, dayKey, freshState, normalize, isHospitalized, warningDue, mood, stageFor, spritePrefixFor, spriteFor, equipmentBonus, care, canHarvest, harvest, canShare, share, revive, moveMenuCursor, menuItemAt };
 });

@@ -99,7 +99,7 @@
     try { const blob = await makeShareCard(), file = new File([blob], "noxcat-pet.png", { type: "image/png" }); let complete = false;
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: "我的 NOX 喵喵喵", text: `${state.name || "NOX 喵喵喵"} 的農場日記`, files: [file] }); complete = true; }
       else { const url = URL.createObjectURL(blob), link = Object.assign(document.createElement("a"), { href: url, download: "noxcat-pet.png" }); link.click(); URL.revokeObjectURL(url); complete = true; }
-      if (complete) { const result = core.share(state, now(), equipped()); state = result.state; save(); render(); message(`分享完成，獲得 ${result.awarded} 顆愛心！`); }
+      if (complete) { const result = core.share(state, now(), equipped()); state = result.state; save(); render(); message(result.awarded ? `分享完成，獲得 ${result.awarded} 顆愛心！` : "分享完成；今天的分享愛心已經領過了。"); }
     } catch (error) { if (error && error.name !== "AbortError") message("分享卡建立失敗，請再試一次。"); }
   }
   document.addEventListener("DOMContentLoaded", () => {
@@ -111,5 +111,6 @@
     $("#save-name").addEventListener("click", () => { const name = $("#pet-name").value.trim(); if (name) { state.name = name; save(); render(); } });
     $("#menu-left").addEventListener("click", () => moveMenu(-1)); $("#menu-right").addEventListener("click", () => moveMenu(1)); $("#menu-confirm").addEventListener("click", confirmMenuSelection);
     window.addEventListener("noxcat-equipment-changed", render);
+    window.addEventListener("noxcat-state-changed", () => { state = load(); render(); });
   });
 })();
