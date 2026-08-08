@@ -15,6 +15,14 @@ async function main() {
   for (const [width, height] of sizes) {
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
     await page.goto(`file://${path.join(process.cwd(), "tamagotchi-test.html")}`, { waitUntil: "load" });
+    const dialogOpen = await page.evaluate(() => document.querySelector("#name-dialog").open);
+    if (dialogOpen) {
+      await page.evaluate(() => {
+        document.querySelector("#pet-name").value = "Nox";
+        document.querySelector("#save-name").click();
+      });
+    }
+    assert.equal(await page.evaluate(() => document.querySelector("#name-dialog").open), false, `${width}x${height} screenshot must not be obscured by the naming dialog`);
     metrics[`${width}x${height}`] = await page.evaluate(() => {
       const menu = document.querySelector(".screen > .menu").getBoundingClientRect();
       const items = [...document.querySelectorAll(".screen > .menu .menu-item")].map((item) => {
