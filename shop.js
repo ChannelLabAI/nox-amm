@@ -31,7 +31,13 @@
     { id: "battle-gi", slot: "clothes", icon: "👊", name: "橙藍鬥氣戰袍", price: 11 },
     { id: "bubble-spirit", slot: "handheld", icon: "🌺", name: "琥珀花靈", price: 9 },
     { id: "fluffy-chick", slot: "handheld", icon: "🐣", name: "絨毛雛鳥", price: 9 },
-    { id: "mini-bot", slot: "handheld", icon: "🤖", name: "迷你機器人", price: 9 }
+    { id: "mini-bot", slot: "handheld", icon: "🤖", name: "迷你機器人", price: 9 },
+    { id: "tabby-ears", slot: "hat", icon: "🐱", name: "虎斑貓耳", price: 5 },
+    { id: "tabby-suit", slot: "clothes", icon: "🐈", name: "虎斑貓裝", price: 6 },
+    { id: "suit-penguin-cap", slot: "hat", icon: "🧢", name: "西裝企鵝帽", price: 5 },
+    { id: "suit-penguin-suit", slot: "clothes", icon: "👔", name: "西裝企鵝裝", price: 6 },
+    { id: "penguin-cap", slot: "hat", icon: "🐧", name: "素企鵝頭套", price: 5 },
+    { id: "penguin-suit", slot: "clothes", icon: "🐧", name: "素企鵝裝", price: 6 }
   ];
   const TEST_MODE = typeof window !== "undefined" && window.NOXCAT_TEST_MODE === true;
   let selected, purchasing = false;
