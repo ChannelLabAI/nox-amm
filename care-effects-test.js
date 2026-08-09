@@ -20,6 +20,17 @@ assert.ok(css.includes(".care-effect--play{left:60px;top:-17px;width:102px;heigh
 assert.ok(css.includes(".care-effect--clean{inset:0;width:144px;height:144px}"));
 assert.doesNotMatch(css, /\.care-bubble/);
 assert.match(source, /animateCare\(kind, core\.stageFor\(state\.activeDays\)\)/);
+const restingCatZIndex = Number(css.match(/#cat\{[^}]*z-index:(\d+)/)[1]);
+const activeCareRule = /#cat\.care-feed,#cat\.care-play,#cat\.care-clean\{z-index:(\d+)\}/;
+assert.match(css, activeCareRule, "all care animations need an active foreground layer");
+const activeCareZIndex = Number(css.match(activeCareRule)[1]);
+const foregroundEquipmentZIndexes = Array.from(
+  source.match(/const EQUIPMENT_Z_INDEX = \{([^}]+)\}/)[1].matchAll(/(?:hat|clothes|handheld):\s*(\d+)/g),
+  (match) => Number(match[1])
+);
+assert.equal(foregroundEquipmentZIndexes.length, 3, "hat, clothes, and handheld need explicit foreground layers");
+assert.ok(restingCatZIndex < Math.min(...foregroundEquipmentZIndexes), "resting equipment must remain above the cat");
+assert.ok(activeCareZIndex > Math.max(...foregroundEquipmentZIndexes), "care animation must temporarily render above foreground equipment");
 childProcess.execFileSync("python3", ["-c", String.raw`
 import re
 from pathlib import Path
