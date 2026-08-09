@@ -1,0 +1,17 @@
+v6 mobile-fit device shell tests passed
+care illustration effect tests passed
+equipment visual config tests passed
+menu readability layout contract tests passed
+message-free farm layout tests passed
+all noxcat regression tests passed
+v4 area-fill geometry tests passed
+test-mode default adult behavior tests passed
+test-mode stage bypass contract tests passed
+viewport layout contract tests passed
+shell scaling analytic verification passed
+javascript syntax checks passed: device-shell-v6-test.js, paw-shell-render-verify.js, shell-scaling-verify.js, qa/render-device-v6-composites.js
+git diff --check passed
+deterministic viewport geometry checks passed: 375x667, 390x844, 414x896, 360x740
+contrast checks passed: glyph=15.76:1 focus=15.55:1 wordmark=18.44:1
+alpha checks passed: screen-center=srgba(0,0,0,0) top-body=srgba(0.96437%,1.28634%,1.6083%,1)
+wordmark span check passed: v6=752 SVG units returned-v5=346 SVG units

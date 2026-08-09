@@ -4,12 +4,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { chromium } = require("playwright");
 
-const sizes = [[375, 667], [390, 844], [414, 896]];
+const sizes = [[375, 667], [390, 844], [414, 896], [360, 740]];
 const geometry = {
-  screen: { left: 20, top: 43.8462, width: 60, height: 36.1538 },
-  buttonCenters: [[32, 88.4615], [50, 88.4615], [68, 88.4615]],
+  screen: { left: 13.5, top: 33.9286, width: 73, height: 40.3061 },
+  buttonCenters: [[28, 86.4796], [50, 86.4796], [72, 86.4796]],
 };
-const output = process.argv[2] || path.join(process.cwd(), "paw-shell-viewports");
+const output = process.argv[2] || path.join(process.cwd(), "device-shell-v6-viewports");
 
 async function main() {
   fs.mkdirSync(output, { recursive: true });
@@ -41,6 +41,8 @@ async function main() {
         buttonCentersPct,
       };
     }, geometry);
+    metrics.buttonCentersAligned = metrics.buttonCentersPct.every((center, index) =>
+      center.every((value, axis) => Math.abs(value - geometry.buttonCenters[index][axis]) <= .02));
     metrics.pageErrors = pageErrors;
     results[`${width}x${height}`] = metrics;
     await page.screenshot({ path: path.join(output, `viewport-${width}x${height}.png`), fullPage: true });
@@ -49,8 +51,8 @@ async function main() {
   await browser.close();
   fs.writeFileSync(path.join(output, "viewport-measurements.json"), `${JSON.stringify(results, null, 2)}\n`);
   for (const [size, metrics] of Object.entries(results)) {
-    console.log(`${size} scrollable=${metrics.scrollable} shellFits=${metrics.shellFits} screenInsideCutout=${metrics.screenInsideCutout} maxEdgeGapPx=${metrics.maxEdgeGapPx}`);
-    if (metrics.scrollable || !metrics.shellFits || !metrics.screenInsideCutout || metrics.maxEdgeGapPx > .75 || metrics.pageErrors.length) process.exitCode = 1;
+    console.log(`${size} scrollable=${metrics.scrollable} shellFits=${metrics.shellFits} screenInsideCutout=${metrics.screenInsideCutout} buttonCentersAligned=${metrics.buttonCentersAligned} maxEdgeGapPx=${metrics.maxEdgeGapPx}`);
+    if (metrics.scrollable || !metrics.shellFits || !metrics.screenInsideCutout || !metrics.buttonCentersAligned || metrics.maxEdgeGapPx > .75 || metrics.pageErrors.length) process.exitCode = 1;
   }
 }
 

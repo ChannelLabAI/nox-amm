@@ -1,0 +1,81 @@
+<!-- Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · component: device shell -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1960" width="1000" height="1960" role="img" aria-label="NOXCAT 圓角矩形行動適配手持裝置外殼 v6">
+<title>NOXCAT 圓角矩形行動適配手持裝置外殼 v6</title>
+<defs>
+  <linearGradient id="bodyFace" x1="8%" y1="0%" x2="92%" y2="100%">
+    <stop offset="0%" stop-color="#262A2F"/>
+    <stop offset="46%" stop-color="#171A1E"/>
+    <stop offset="100%" stop-color="#0B0D10"/>
+  </linearGradient>
+  <linearGradient id="brandDeck" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1E2227"/>
+    <stop offset="100%" stop-color="#0D0F12"/>
+  </linearGradient>
+  <linearGradient id="limeEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#E4FFAD"/>
+    <stop offset="32%" stop-color="#AAFF00"/>
+    <stop offset="100%" stop-color="#507A00"/>
+  </linearGradient>
+  <filter id="bodyShadow" x="-18%" y="-10%" width="136%" height="136%">
+    <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#050608" flood-opacity=".82"/>
+  </filter>
+  <filter id="edgeGlow" x="-24%" y="-16%" width="148%" height="132%">
+    <feGaussianBlur stdDeviation="7" result="soft"/>
+    <feMerge><feMergeNode in="soft"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+
+<g id="deviceBody">
+  <rect x="38" y="22" width="924" height="1916" rx="112" fill="none" stroke="#050608" stroke-width="50" filter="url(#bodyShadow)"/>
+  <path id="topBody" d="M150 30H850Q950 30 950 130V665H50V130Q50 30 150 30Z" fill="url(#bodyFace)"/>
+  <rect id="leftBody" x="50" y="640" width="85" height="840" fill="url(#bodyFace)"/>
+  <rect id="rightBody" x="865" y="640" width="85" height="840" fill="url(#bodyFace)"/>
+  <path id="bottomBody" d="M50 1455H950V1830Q950 1930 850 1930H150Q50 1930 50 1830Z" fill="url(#bodyFace)"/>
+
+  <rect x="72" y="54" width="856" height="1848" rx="84" fill="none" stroke="#AAFF00" stroke-opacity=".22" stroke-width="18" filter="url(#edgeGlow)"/>
+  <rect x="72" y="54" width="856" height="1848" rx="84" fill="none" stroke="url(#limeEdge)" stroke-width="6"/>
+  <rect x="91" y="73" width="818" height="1810" rx="69" fill="none" stroke="#F5FFD8" stroke-opacity=".14" stroke-width="3"/>
+
+  <path d="M92 398H112V1580H92" fill="none" stroke="#AAFF00" stroke-opacity=".54" stroke-width="6"/>
+  <path d="M908 398H888V1580H908" fill="none" stroke="#AAFF00" stroke-opacity=".54" stroke-width="6"/>
+  <path d="M104 436H126M104 520H126M104 1540H126" stroke="#DFFF9B" stroke-opacity=".58" stroke-width="5"/>
+  <path d="M896 436H874M896 520H874M896 1540H874" stroke="#DFFF9B" stroke-opacity=".58" stroke-width="5"/>
+
+  <path id="brandDeck" d="M126 112H874L906 144V512L874 544H126L94 512V144Z" fill="url(#brandDeck)" stroke="#343A40" stroke-width="6"/>
+  <path d="M126 136H874" stroke="#AAFF00" stroke-opacity=".5" stroke-width="4"/>
+  <path d="M126 520H874" stroke="#AAFF00" stroke-opacity=".5" stroke-width="4"/>
+  <path d="M112 162V244M888 412V494" stroke="#AAFF00" stroke-width="9"/>
+  <path d="M112 266V294M888 380V400" stroke="#F5FFD8" stroke-opacity=".42" stroke-width="5"/>
+
+  <rect x="106" y="636" width="788" height="848" rx="75" fill="none" stroke="#07090B" stroke-width="30"/>
+  <rect x="116" y="646" width="768" height="828" rx="64" fill="none" stroke="#AAFF00" stroke-opacity=".2" stroke-width="18" filter="url(#edgeGlow)"/>
+  <rect x="121" y="651" width="758" height="818" rx="60" fill="none" stroke="#0A0C0F" stroke-width="22"/>
+  <rect x="132" y="662" width="736" height="796" rx="49" fill="none" stroke="#AAFF00" stroke-opacity=".88" stroke-width="5"/>
+  <path d="M155 642H388M612 1478H845" stroke="#F5FFD8" stroke-opacity=".22" stroke-width="5" stroke-linecap="round"/>
+
+  <path d="M108 1584H892V1838Q892 1878 852 1878H148Q108 1878 108 1838Z" fill="#101317" stroke="#343A40" stroke-width="7"/>
+  <path d="M148 1608H852" stroke="#AAFF00" stroke-opacity=".38" stroke-width="4"/>
+  <path d="M144 1848H354M646 1848H856" stroke="#AAFF00" stroke-opacity=".34" stroke-width="5" stroke-linecap="round"/>
+  <path d="M465 1848H535" stroke="#F5FFD8" stroke-opacity=".28" stroke-width="5" stroke-linecap="round"/>
+  <path d="M924 574L882 616V1498L926 1540Z" fill="#000000" opacity=".24"/>
+</g>
+
+<g id="brandWordmark" aria-label="NOXCAT 品牌字樣" fill="none" stroke-linecap="square" stroke-linejoin="bevel">
+  <g stroke="#030405" stroke-width="30" opacity=".82" transform="translate(0 8)">
+    <path d="M152 382V218L252 382V218"/><rect x="286" y="218" width="110" height="164" rx="22"/><path d="M430 218L532 382M532 218L430 382"/><path d="M658 244L632 218H588L560 246V354L588 382H632L658 356"/><path d="M684 382L732 218H764L812 382M704 318H792"/><path d="M824 218H904M864 218V382"/>
+  </g>
+  <g stroke="#F5FFD8" stroke-width="18">
+    <path d="M152 382V218L252 382V218"/><rect x="286" y="218" width="110" height="164" rx="22"/><path d="M430 218L532 382M532 218L430 382"/><path d="M658 244L632 218H588L560 246V354L588 382H632L658 356"/><path d="M684 382L732 218H764L812 382M704 318H792"/><path d="M824 218H904M864 218V382"/>
+  </g>
+  <path d="M152 422H848" stroke="#AAFF00" stroke-width="8"/>
+  <path d="M152 448H446M554 448H848" stroke="#F5FFD8" stroke-opacity=".22" stroke-width="4"/>
+  <path d="M478 448H522" stroke="#AAFF00" stroke-width="8"/>
+</g>
+
+<g id="screenRegistration" fill="none" stroke="#AAFF00" stroke-width="6" stroke-linecap="square">
+  <path d="M112 704V650Q112 626 136 626H190"/>
+  <path d="M810 626H864Q888 626 888 650V704"/>
+  <path d="M112 1416V1470Q112 1494 136 1494H190"/>
+  <path d="M810 1494H864Q888 1494 888 1470V1416"/>
+</g>
+</svg>

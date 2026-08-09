@@ -1,0 +1,6 @@
+command=/opt/google/chrome/chrome --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-breakpad --disable-crash-reporter --disable-crashpad --user-data-dir=/tmp/noxcat-v6-chrome-profile --screenshot=/tmp/noxcat-v6-browser-probe.png --window-size=375,667 file:///tmp/noxcat-0521-sara-v6/tamagotchi-test.html
+exit_code=133
+[0810/054756.232984:WARNING:chrome/app/chrome_main_linux.cc:83] Read channel stable from /opt/google/chrome/CHROME_VERSION_EXTRA
+[2:2:0810/054756.396551:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)
+screenshot_created=false
+conclusion=Browser QA unavailable in this sandbox. Deterministic geometry composites are not browser screenshots; run HOST-SHELL-SCALING-VERIFY.md on an authorized host.
