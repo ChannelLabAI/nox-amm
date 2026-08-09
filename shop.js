@@ -23,6 +23,9 @@
     { id: "spider-city", slot: "background", icon: "🌃", name: "蛛網夜城", price: 8 },
     { id: "spider-mask", slot: "hat", icon: "🕷️", name: "蛛網俠面罩", price: 9 },
     { id: "spider-suit", slot: "clothes", icon: "🦸", name: "蛛網俠戰衣", price: 11 },
+    { id: "webslinger-city", slot: "background", icon: "🌆", name: "赤藍蛛網城", price: 8 },
+    { id: "webslinger-mask", slot: "hat", icon: "🕸️", name: "赤藍蛛網面罩", price: 9 },
+    { id: "webslinger-suit", slot: "clothes", icon: "🦸", name: "赤藍蛛網戰衣", price: 11 },
     { id: "mini-planet", slot: "background", icon: "🪐", name: "迷你星球道場", price: 8 },
     { id: "golden-flame-hair", slot: "hat", icon: "🔥", name: "爆髮金焰", price: 9 },
     { id: "battle-gi", slot: "clothes", icon: "👊", name: "橙藍鬥氣戰袍", price: 11 }
