@@ -123,6 +123,30 @@ test("spider premium tier prices at or above the baseline ceiling", () => {
   assert.deepEqual(premium.map((entry) => entry.price), [8, 9, 11], "spider-city <= spider-mask < spider-suit, ranked by original NOX price 16/18/22");
 });
 
+test("ten lightweight shop items keep their approved slots, labels, and prices", () => {
+  const shop = loadShop();
+  const expected = [
+    ["rainbow", "background", "🌈", "雨後彩虹農場", 6],
+    ["snowfield", "background", "❄️", "冰雪農場", 7],
+    ["strawberry-hat", "hat", "🍓", "草莓帽", 3],
+    ["bow", "hat", "🎀", "蝴蝶結", 4],
+    ["space-helmet", "hat", "🪖", "太空頭盔", 9],
+    ["vest", "clothes", "🦺", "漁夫背心", 5],
+    ["star-cloak", "clothes", "🌠", "星空斗篷", 8],
+    ["fishing-rod", "handheld", "🎣", "釣魚竿", 3],
+    ["lollipop", "handheld", "🍭", "音符棒棒糖", 4],
+    ["lantern", "handheld", "🏮", "小提燈", 6]
+  ];
+  assert.deepEqual(expected.map(([id]) => id), expected.map(([id]) => shop.ITEMS.find((entry) => entry.id === id)?.id));
+  for (const [id, slot, icon, name, price] of expected) {
+    const entry = shop.ITEMS.find((candidate) => candidate.id === id);
+    assert.deepEqual({ ...entry }, { id, slot, icon, name, price });
+    const exchange = shop.exchangeHearts({ hearts: 20 }, [], entry);
+    assert.equal(exchange.ok, true, `${id} must be purchasable`);
+    assert.equal(exchange.state.hearts, 20 - price, `${id} must deduct its approved price exactly once`);
+  }
+});
+
 test("heart exchange deducts exactly once and never goes negative", () => {
   const shop = loadShop(), flower = shop.ITEMS.find((entry) => entry.id === "flower");
   const success = shop.exchangeHearts({ hearts: 3, name: "Mochi" }, [], flower);
