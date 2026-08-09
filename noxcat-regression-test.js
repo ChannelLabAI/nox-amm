@@ -147,6 +147,15 @@ test("ten lightweight shop items keep their approved slots, labels, and prices",
   }
 });
 
+test("golden warrior set matches the established premium tier", () => {
+  const shop = loadShop();
+  const setIds = ["mini-planet", "golden-flame-hair", "battle-gi"];
+  const set = setIds.map((id) => shop.ITEMS.find((entry) => entry.id === id));
+  assert.ok(set.every(Boolean), "all three golden warrior items must exist in ITEMS");
+  assert.deepEqual(set.map((entry) => entry.slot), ["background", "hat", "clothes"]);
+  assert.deepEqual(set.map((entry) => entry.price), [8, 9, 11]);
+});
+
 test("heart exchange deducts exactly once and never goes negative", () => {
   const shop = loadShop(), flower = shop.ITEMS.find((entry) => entry.id === "flower");
   const success = shop.exchangeHearts({ hearts: 3, name: "Mochi" }, [], flower);
@@ -161,6 +170,18 @@ test("heart exchange deducts exactly once and never goes negative", () => {
   const duplicate = shop.exchangeHearts({ hearts: 9 }, ["flower"], flower);
   assert.equal(duplicate.ok, false);
   assert.equal(duplicate.state.hearts, 9);
+});
+
+test("each golden warrior item can be bought with its exact heart price", () => {
+  for (const [id, price] of [["mini-planet", 8], ["golden-flame-hair", 9], ["battle-gi", 11]]) {
+    const { context, elements, storage } = loadShopIntegration({ hearts: price, name: "Mochi" });
+    const button = context.document.querySelectorAll("[data-buy]").find((candidate) => candidate.dataset.buy === id);
+    assert.equal(button.disabled, false, `${id} must be purchasable at ${price} hearts`);
+    button.onclick();
+    elements.get("#confirm-purchase").onclick();
+    assert.equal(JSON.parse(storage.get("noxcat-tamagotchi-v1")).hearts, 0, `${id} must deduct exactly ${price} hearts`);
+    assert.deepEqual(JSON.parse(storage.get("noxcat_owned_items")), [id]);
+  }
 });
 
 test("real shop click exchanges hearts locally without a wallet", () => {

@@ -25,6 +25,9 @@
     "spider-city": { adult: { default: "assets/equipment/sara/spider-city-background-96px.png" } },
     "spider-mask": { adult: { default: "assets/equipment/sara/spider-mask-hat-overlay-48px.png" } },
     "spider-suit": { adult: { default: "assets/equipment/sara/spider-suit-clothes-overlay-48px.png" } },
+    "mini-planet": { adult: { default: "assets/equipment/sara/mini-planet-background-96px.png" } },
+    "golden-flame-hair": { adult: { default: "assets/equipment/sara/golden-flame-hair-hat-overlay-48px.png" } },
+    "battle-gi": { adult: { default: "assets/equipment/sara/battle-gi-clothes-overlay-48px.png" } },
     // Verification-only: provided preview images prove per-mood replacement.
     "spider-preview": { adult: {
       normal: "assets/equipment/spider/preview-dressed-normal-48px.png",

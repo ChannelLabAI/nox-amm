@@ -6,7 +6,9 @@ transparent layer fits all moods. No renderer changes are required.
 
 The `spider-preview` mood variants are verification-only examples; the sold
 spider items use their own `adult -> default` layers in the main table.
-Lightweight shop items use one
-`adult -> default` overlay: 48x48 transparent PNGs for `hat`, `clothes`, and
-`handheld`, or 96x96 PNGs for `background`. The renderer falls back to that
-default layer for every adult mood; kitten and teen variants remain absent.
+Every other sold item with paper-doll art (including the lightweight and
+golden-warrior sets) is registered the same way: one `adult -> default`
+overlay per item — a transparent 48×48 source for `hat`, `clothes`, and
+`handheld`, aligned to the adult character sprite, or a 96×96 source for
+`background`. The renderer falls back to that default layer for every adult
+mood; kitten and teen variants remain absent.

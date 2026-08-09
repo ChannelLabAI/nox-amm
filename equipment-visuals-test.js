@@ -23,7 +23,8 @@ const expectedOverlays = {
   "space-helmet": "assets/equipment/sara/space-helmet-hat-overlay-48px.png", vest: "assets/equipment/sara/vest-clothes-overlay-48px.png",
   "star-cloak": "assets/equipment/sara/star-cloak-clothes-overlay-48px.png", "fishing-rod": "assets/equipment/sara/fishing-rod-handheld-overlay-48px.png",
   lollipop: "assets/equipment/sara/lollipop-handheld-overlay-48px.png", lantern: "assets/equipment/sara/lantern-handheld-overlay-48px.png",
-  "spider-city": "assets/equipment/sara/spider-city-background-96px.png", "spider-mask": "assets/equipment/sara/spider-mask-hat-overlay-48px.png", "spider-suit": "assets/equipment/sara/spider-suit-clothes-overlay-48px.png"
+  "spider-city": "assets/equipment/sara/spider-city-background-96px.png", "spider-mask": "assets/equipment/sara/spider-mask-hat-overlay-48px.png", "spider-suit": "assets/equipment/sara/spider-suit-clothes-overlay-48px.png",
+  "mini-planet": "assets/equipment/sara/mini-planet-background-96px.png", "golden-flame-hair": "assets/equipment/sara/golden-flame-hair-hat-overlay-48px.png", "battle-gi": "assets/equipment/sara/battle-gi-clothes-overlay-48px.png"
 };
 for (const [itemId, path] of Object.entries(expectedOverlays)) {
   assert.equal(visuals.overlayPathFor(itemId, "adult", "happy"), path, `${itemId} must map to its approved Sara overlay`);
@@ -45,6 +46,9 @@ assert.equal(backgroundContainer.children.map((image) => image.dataset.slot).joi
 assert.equal(backgroundContainer.children.map((image) => image.style.zIndex).join(","), "1");
 assert.equal(characterContainer.children.map((image) => image.dataset.slot).join(","), "hat,clothes");
 assert.equal(characterContainer.children.map((image) => image.style.zIndex).join(","), "3,4");
+visuals.renderEquipmentVisuals({ background: "mini-planet", hat: "golden-flame-hair", clothes: "battle-gi" }, "adult", "normal");
+assert.equal(backgroundContainer.children.map((image) => image.dataset.itemId).join(","), "mini-planet");
+assert.equal(characterContainer.children.map((image) => image.dataset.itemId).join(","), "golden-flame-hair,battle-gi");
 visuals.renderEquipmentVisuals({ hat: "cap" }, "teen", "happy");
 assert.equal(backgroundContainer.children.length, 0);
 assert.equal(characterContainer.children.length, 0);
