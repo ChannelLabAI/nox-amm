@@ -31,6 +31,9 @@
     "mini-planet": { adult: { default: "assets/equipment/sara/mini-planet-background-96px.png" } },
     "golden-flame-hair": { adult: { default: "assets/equipment/sara/golden-flame-hair-hat-overlay-48px.png" } },
     "battle-gi": { adult: { default: "assets/equipment/sara/battle-gi-clothes-overlay-48px.png" } },
+    "bubble-spirit": { adult: { default: "assets/equipment/sara/bubble-spirit-handheld-overlay-48px.png" } },
+    "fluffy-chick": { adult: { default: "assets/equipment/sara/fluffy-chick-handheld-overlay-48px.png" } },
+    "mini-bot": { adult: { default: "assets/equipment/sara/mini-bot-handheld-overlay-48px.png" } },
     // Verification-only: provided preview images prove per-mood replacement.
     "spider-preview": { adult: {
       normal: "assets/equipment/spider/preview-dressed-normal-48px.png",

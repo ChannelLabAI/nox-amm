@@ -28,7 +28,10 @@
     { id: "webslinger-suit", slot: "clothes", icon: "🦸", name: "赤藍蛛網戰衣", price: 11 },
     { id: "mini-planet", slot: "background", icon: "🪐", name: "迷你星球道場", price: 8 },
     { id: "golden-flame-hair", slot: "hat", icon: "🔥", name: "爆髮金焰", price: 9 },
-    { id: "battle-gi", slot: "clothes", icon: "👊", name: "橙藍鬥氣戰袍", price: 11 }
+    { id: "battle-gi", slot: "clothes", icon: "👊", name: "橙藍鬥氣戰袍", price: 11 },
+    { id: "bubble-spirit", slot: "handheld", icon: "🫧", name: "泡泡精靈", price: 9 },
+    { id: "fluffy-chick", slot: "handheld", icon: "🐣", name: "絨毛雛鳥", price: 9 },
+    { id: "mini-bot", slot: "handheld", icon: "🤖", name: "迷你機器人", price: 9 }
   ];
   const TEST_MODE = typeof window !== "undefined" && window.NOXCAT_TEST_MODE === true;
   let selected, purchasing = false;
