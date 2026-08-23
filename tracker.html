@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOX 持倉追蹤器</title>
+<title>代幣追蹤器</title>
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -182,7 +182,7 @@
       <div class="hero-badge">Wallet Tracker</div>
       <button class="settings-btn" onclick="openSettings()" title="API 設定">⚙️</button>
     </div>
-    <h1 id="tracker-title">NOX 持倉追蹤器</h1>
+    <h1 id="tracker-title">代幣追蹤器</h1>
     <p class="hero-sub" id="tracker-subtitle">查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包</p>
     <div id="api-mode-badge" style="display:none" class="mode-badge">⚡ Etherscan V2 Mode</div>
   </section>
@@ -197,6 +197,7 @@
           <option value="base">Base</option>
           <option value="optimism">Optimism</option>
           <option value="polygon">Polygon</option>
+          <option value="robinhood">Robinhood Chain</option>
         </select>
       </div>
       <div class="field-group">
@@ -260,7 +261,7 @@
   </div>
 
   <footer class="footer">
-    <p id="tracker-footer">NOX Wallet Tracker &middot; 資料來源：BlockScout &middot; Arbitrum One</p>
+    <p id="tracker-footer">代幣追蹤器 &middot; 資料來源：BlockScout &middot; Arbitrum One</p>
   </footer>
 
 </div>
@@ -281,6 +282,7 @@
     base:     { key:'base',     name:'Base',         chainId:'8453',  blockscout:'https://base.blockscout.com/api/v2',     explorer:'https://base.blockscout.com' },
     optimism: { key:'optimism', name:'Optimism',     chainId:'10',    blockscout:'https://optimism.blockscout.com/api/v2', explorer:'https://optimism.blockscout.com' },
     polygon:  { key:'polygon',  name:'Polygon',      chainId:'137',   blockscout:'https://polygon.blockscout.com/api/v2',  explorer:'https://polygon.blockscout.com' },
+    robinhood:{ key:'robinhood', name:'Robinhood Chain', chainId:'4663', blockscout:'https://robinhoodchain.blockscout.com/api/v2', explorer:'https://robinhoodchain.blockscout.com' },
   });
   const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -768,10 +770,9 @@
     const chain=getSelectedChain();
     const token=document.getElementById('token-input').value.trim().toLowerCase();
     const noxMode=isEvmAddress(token)&&isDefaultNoxContext(chain,token);
-    const displaySymbol=noxMode?'NOX':(symbol||'EVM 代幣');
-    setText('tracker-title', `${displaySymbol} 持倉追蹤器`);
+    setText('tracker-title', '代幣追蹤器');
     setText('tracker-subtitle', noxMode ? '查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包' : `查詢 ${chain.name} 上指定 ERC-20 代幣的持倉與轉帳紀錄`);
-    setText('tracker-footer', `${displaySymbol} Wallet Tracker · 資料來源：Blockscout v2 · ${chain.name}`);
+    setText('tracker-footer', `代幣追蹤器 · 資料來源：Blockscout v2 · ${chain.name}`);
   }
 
   function renderStats(d) {
