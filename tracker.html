@@ -42,6 +42,11 @@
   .hero-sub { font-size:13px; color:var(--text-secondary); }
 
   .search-section { background:var(--bg-card); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:28px; }
+  .tracker-config { display:grid; grid-template-columns:200px minmax(0,1fr); gap:12px; margin-bottom:12px; }
+  .field-group { min-width:0; }
+  .field-label { display:block; margin:0 0 6px 4px; color:var(--text-secondary); font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .chain-select { width:100%; appearance:none; cursor:pointer; }
+  .chain-select option { background:var(--bg-card); color:var(--text-primary); }
   .search-row { display:flex; gap:12px; align-items:center; }
   .search-input { flex:1; padding:14px 20px; background:var(--bg-input); border:1px solid var(--border); border-radius:12px; color:var(--text-primary); font-family:'JetBrains Mono',monospace; font-size:13px; outline:none; transition:border-color 0.2s; }
   .search-input:focus { border-color:var(--border-focus); }
@@ -119,6 +124,7 @@
 
   @media (max-width:768px) {
     .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .tracker-config { grid-template-columns:1fr; }
     .search-row { flex-direction:column; }
     .search-btn { width:100%; }
     .tx-table { min-width:unset; }
@@ -176,12 +182,28 @@
       <div class="hero-badge">Wallet Tracker</div>
       <button class="settings-btn" onclick="openSettings()" title="API 設定">⚙️</button>
     </div>
-    <h1>NOX 持倉追蹤器</h1>
-    <p class="hero-sub">查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包</p>
-    <div id="api-mode-badge" style="display:none" class="mode-badge">⚡ Arbiscan Mode</div>
+    <h1 id="tracker-title">NOX 持倉追蹤器</h1>
+    <p class="hero-sub" id="tracker-subtitle">查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包</p>
+    <div id="api-mode-badge" style="display:none" class="mode-badge">⚡ Etherscan V2 Mode</div>
   </section>
 
   <div class="search-section">
+    <div class="tracker-config" data-feature="multi-chain">
+      <div class="field-group">
+        <label class="field-label" for="chain-select">EVM 鏈</label>
+        <select class="search-input chain-select" id="chain-select" onchange="handleContextChange()">
+          <option value="arbitrum" selected>Arbitrum One</option>
+          <option value="ethereum">Ethereum</option>
+          <option value="base">Base</option>
+          <option value="optimism">Optimism</option>
+          <option value="polygon">Polygon</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="token-input">代幣合約地址</label>
+        <input class="search-input" id="token-input" type="text" value="0xb23bb8c2c6cb9169eeac8f2bd42fcf333a1a8c55" placeholder="輸入 ERC-20 合約地址" autocomplete="off" spellcheck="false" onchange="handleContextChange()">
+      </div>
+    </div>
     <div class="search-row">
       <input class="search-input" id="wallet-input" type="text" placeholder="輸入錢包地址，例如 0xABCD...1234">
       <button class="search-btn" id="search-btn" onclick="search()">查詢</button>
@@ -199,12 +221,12 @@
 
   <div id="stats-section" style="display:none">
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">買入次數</div><div class="stat-value up" id="s-buy-count">—</div><div class="stat-sub" id="s-buy-usdt">— USDT</div></div>
-      <div class="stat-card"><div class="stat-label">賣出次數</div><div class="stat-value down" id="s-sell-count">—</div><div class="stat-sub" id="s-sell-usdt">— USDT</div></div>
-      <div class="stat-card"><div class="stat-label">持有 NOX（估）</div><div class="stat-value gold" id="s-net-nox">—</div><div class="stat-sub" id="s-net-usdt">—</div></div>
-      <div class="stat-card"><div class="stat-label">均買價</div><div class="stat-value" id="s-avg-buy">—</div><div class="stat-sub">USDT/NOX</div></div>
-      <div class="stat-card"><div class="stat-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub">USDT/NOX</div></div>
-      <div class="stat-card"><div class="stat-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub" id="s-stake-sub">質押-解質押 NOX</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-in-label">買入次數</div><div class="stat-value up" id="s-buy-count">—</div><div class="stat-sub" id="s-buy-usdt">— USDT</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-out-label">賣出次數</div><div class="stat-value down" id="s-sell-count">—</div><div class="stat-sub" id="s-sell-usdt">— USDT</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-net-label">持有 NOX（估）</div><div class="stat-value gold" id="s-net-nox">—</div><div class="stat-sub" id="s-net-usdt">—</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-avg-in-label">均買價</div><div class="stat-value" id="s-avg-buy">—</div><div class="stat-sub" id="s-avg-in-sub">USDT/NOX</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-avg-out-label">均賣價</div><div class="stat-value" id="s-avg-sell">—</div><div class="stat-sub" id="s-avg-out-sub">USDT/NOX</div></div>
+      <div class="stat-card"><div class="stat-label" id="s-extra-label">淨質押量</div><div class="stat-value" style="color:var(--purple)" id="s-stake-nox">—</div><div class="stat-sub" id="s-stake-sub">質押-解質押 NOX</div></div>
     </div>
   </div>
 
@@ -238,7 +260,7 @@
   </div>
 
   <footer class="footer">
-    <p>NOX Wallet Tracker &middot; 資料來源：BlockScout &middot; Arbitrum One</p>
+    <p id="tracker-footer">NOX Wallet Tracker &middot; 資料來源：BlockScout &middot; Arbitrum One</p>
   </footer>
 
 </div>
@@ -252,7 +274,15 @@
     '0x2963103b7d93f853115c7aa055cfacec0ed77328', // StakeNox TransparentUpgradeableProxy
     '0x944f113bb6ca6be35b97c1b3953a0a15781979f1', // staking vault (actual NOX destination)
   ]);
-  const BS        = 'https://arbitrum.blockscout.com/api/v2';
+
+  const CHAIN_CONFIGS = Object.freeze({
+    arbitrum: { key:'arbitrum', name:'Arbitrum One', chainId:'42161', blockscout:'https://arbitrum.blockscout.com/api/v2', explorer:'https://arbitrum.blockscout.com' },
+    ethereum: { key:'ethereum', name:'Ethereum',     chainId:'1',     blockscout:'https://eth.blockscout.com/api/v2',      explorer:'https://eth.blockscout.com' },
+    base:     { key:'base',     name:'Base',         chainId:'8453',  blockscout:'https://base.blockscout.com/api/v2',     explorer:'https://base.blockscout.com' },
+    optimism: { key:'optimism', name:'Optimism',     chainId:'10',    blockscout:'https://optimism.blockscout.com/api/v2', explorer:'https://optimism.blockscout.com' },
+    polygon:  { key:'polygon',  name:'Polygon',      chainId:'137',   blockscout:'https://polygon.blockscout.com/api/v2',  explorer:'https://polygon.blockscout.com' },
+  });
+  const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
   const KNOWN_CONTRACTS = new Set([
     '0x0000000000000000000000000000000000000000',
@@ -279,6 +309,10 @@
 
   function shortAddr(addr) { return addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '—'; }
   function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+  function isEvmAddress(address) { return EVM_ADDRESS_RE.test(address); }
+  function getSelectedChain() { return CHAIN_CONFIGS[document.getElementById('chain-select').value] || CHAIN_CONFIGS.arbitrum; }
+  function isDefaultNoxContext(chain, tokenContract) { return chain.key==='arbitrum' && tokenContract.toLowerCase()===NOX_CA; }
+  function buildCacheKey(wallet, tokenContract, chain) { return `nox_sess_v2_${chain.key}_${tokenContract.toLowerCase()}_${wallet.toLowerCase()}`; }
 
   // ── Wallet Notes (localStorage) ──────────────────────────────────────
   function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -288,10 +322,10 @@
     if(note.trim()) localStorage.setItem(k,note.trim()); else localStorage.removeItem(k);
   }
 
-  // ── Arbiscan API Key (localStorage) ─────────────────────────────────
-  function getArbiscanKey() { return localStorage.getItem('nox_arbiscan_key')||''; }
-  function saveArbiscanKey(key) {
-    if(key) localStorage.setItem('nox_arbiscan_key', key); else localStorage.removeItem('nox_arbiscan_key');
+  // ── Etherscan V2 API Key (localStorage) ─────────────────────────────
+  function getEtherscanKey() { return localStorage.getItem('nox_etherscan_key')||''; }
+  function saveEtherscanKey(key) {
+    if(key) localStorage.setItem('nox_etherscan_key', key); else localStorage.removeItem('nox_etherscan_key');
   }
 
   function showMainNoteRow(addr) {
@@ -370,9 +404,10 @@
     try { _visNetwork.body.data.nodes.update({id:addr, label:getNote(addr)||shortAddr(addr)}); } catch(ex) {}
   }
 
-  function classifyTx(row) {
+  function classifyTx(row, noxMode) {
     const from = row.fromAddr;
     const to   = row.toAddr;
+    if(!noxMode) return row.isBuy ? '轉入' : '轉出';
     if(from===POOL_CA || to===POOL_CA) return row.isBuy ? '買' : '賣';
     if(STAKING_ADDRS.has(to))   return '質押';
     if(STAKING_ADDRS.has(from)) return row.noxAmt < 100 ? '質押收益' : '解質押';
@@ -396,44 +431,48 @@
     return fetch(url, {signal: ctrl.signal}).finally(()=>clearTimeout(tid));
   }
 
-  async function fetchTransfersArbiscan(address, tokenContract, apiKey, onProgress) {
+  async function fetchTransfersEtherscan(address, tokenContract, apiKey, chain, onProgress) {
     const allItems = [];
     let page = 1;
     while(page <= 50) {
-      const url = `https://api.arbiscan.io/api?module=account&action=tokentx&address=${address}&contractaddress=${tokenContract}&startblock=0&endblock=99999999&page=${page}&offset=10000&sort=desc&apikey=${apiKey}`;
+      const url = `https://api.etherscan.io/v2/api?chainid=${chain.chainId}&module=account&action=tokentx&address=${address}&contractaddress=${tokenContract}&startblock=0&endblock=99999999&page=${page}&offset=1000&sort=desc&apikey=${encodeURIComponent(apiKey)}`;
       const r = await fetchWithTimeout(url);
-      if(!r.ok) break;
+      if(!r.ok) throw new Error(`Etherscan V2 HTTP ${r.status}`);
       const j = await r.json();
-      if(j.status !== '1') break;
+      if(j.status !== '1') {
+        if(page===1 && /no transactions found/i.test(String(j.result||j.message||''))) return [];
+        throw new Error(String(j.result||j.message||'Etherscan V2 查詢失敗'));
+      }
       const batch = (j.result||[]).map(item => ({
         transaction_hash: item.hash,
         timestamp: new Date(parseInt(item.timeStamp)*1000).toISOString(),
         from: { hash: item.from.toLowerCase() },
         to:   { hash: item.to.toLowerCase() },
         total: { value: item.value, decimals: item.tokenDecimal },
+        token_symbol: item.tokenSymbol,
       }));
       allItems.push(...batch);
       if(onProgress) onProgress(allItems.length);
-      if(batch.length < 10000) break;
+      if(batch.length < 1000) break;
       page++;
     }
     window._dataTruncated = (page > 50);
     return allItems;
   }
 
-  async function fetchTransfersBlockscout(address, tokenContract, onProgress) {
+  async function fetchTransfersBlockscout(address, tokenContract, chain, onProgress) {
     const items = [];
-    let url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20`;
+    let url = `${chain.blockscout}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20`;
     let page = 0;
     while(page < 100) {
       const r = await fetchWithTimeout(url);
-      if(!r.ok) break;
+      if(!r.ok) throw new Error(`${chain.name} Blockscout HTTP ${r.status}`);
       const j = await r.json();
       items.push(...(j.items||[]));
       if(onProgress) onProgress(items.length);
       if(!j.next_page_params) break;
       const params = new URLSearchParams(j.next_page_params).toString();
-      url = `${BS}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20&${params}`;
+      url = `${chain.blockscout}/addresses/${address}/token-transfers?token=${tokenContract}&type=ERC-20&${params}`;
       await sleep(80);
       page++;
     }
@@ -441,16 +480,19 @@
     return items;
   }
 
-  async function fetchTokenTransfers(address, tokenContract, onProgress) {
-    const key = getArbiscanKey();
-    if(key) return fetchTransfersArbiscan(address, tokenContract, key, onProgress);
-    return fetchTransfersBlockscout(address, tokenContract, onProgress);
+  async function fetchTokenTransfers(address, tokenContract, chain, onProgress) {
+    const key = getEtherscanKey();
+    if(key) {
+      try { return await fetchTransfersEtherscan(address, tokenContract, key, chain, onProgress); }
+      catch(e) { console.warn('Etherscan V2 failed; falling back to Blockscout:', e.message); }
+    }
+    return fetchTransfersBlockscout(address, tokenContract, chain, onProgress);
   }
 
   // Fetch normal transactions to find related wallets
-  async function fetchTransactions(address, maxPages=4) {
+  async function fetchTransactions(address, chain, maxPages=4) {
     const items = [];
-    let url = `${BS}/addresses/${address}/transactions?filter=to%7Cfrom`;
+    let url = `${chain.blockscout}/addresses/${address}/transactions?filter=to%7Cfrom`;
     for(let p=0; p<maxPages; p++) {
       const r = await fetchWithTimeout(url);
       if(!r.ok) break;
@@ -458,25 +500,29 @@
       items.push(...(j.items||[]));
       if(!j.next_page_params) break;
       const params = new URLSearchParams(j.next_page_params).toString();
-      url = `${BS}/addresses/${address}/transactions?filter=to%7Cfrom&${params}`;
+      url = `${chain.blockscout}/addresses/${address}/transactions?filter=to%7Cfrom&${params}`;
       await sleep(80);
     }
     return items;
   }
 
-  async function fetchNoxData(wallet, onProgress) {
+  async function fetchTokenData(wallet, tokenContract, chain, onProgress) {
     // Session cache — re-querying same wallet within tab is instant
-    const cacheKey='nox_sess_'+wallet.toLowerCase();
+    const cacheKey=buildCacheKey(wallet, tokenContract, chain);
     try { const c=sessionStorage.getItem(cacheKey); if(c){ const p=JSON.parse(c); if(Date.now()-p.ts<180000) return p.data; } } catch(e){}
 
     const w = wallet.toLowerCase();
+    const noxMode = isDefaultNoxContext(chain, tokenContract);
 
-    // Parallel fetch: NOX + USDT transfers together (eliminates N per-tx lookups)
-    // onProgress passed to NOX fetch only (main signal); USDT fetch runs silently
+    // Default NOX mode keeps the historical USDT join. Generic tokens only need
+    // their own transfer stream; inferring swaps from one hard-coded quote token
+    // would be misleading on other chains.
     const [noxItems, usdtItems] = await Promise.all([
-      fetchTokenTransfers(wallet, NOX_CA, onProgress),
-      fetchTokenTransfers(wallet, USDT_CA),
+      fetchTokenTransfers(wallet, tokenContract, chain, onProgress),
+      noxMode ? fetchTokenTransfers(wallet, USDT_CA, chain) : Promise.resolve([]),
     ]);
+    const rawSymbol = noxItems.find(item=>item.token?.symbol)?.token?.symbol || noxItems.find(item=>item.token_symbol)?.token_symbol || 'TOKEN';
+    const tokenSymbol = noxMode ? 'NOX' : (String(rawSymbol).toUpperCase().replace(/[^A-Z0-9._-]/g,'').slice(0,16)||'TOKEN');
 
     // Build USDT index by tx hash for O(1) join — direction-aware
     const usdtByTx={};
@@ -496,7 +542,7 @@
       const isBuy = to===w;
       const noxAmt = parseInt(item.total?.value||'0') / Math.pow(10, parseInt(item.total?.decimals||'18'));
       const row = { hash: item.transaction_hash, ts: item.timestamp, fromAddr: from, toAddr: to, isBuy, noxAmt, usdtAmt: null, price: null, type: null };
-      row.type = classifyTx(row);
+      row.type = classifyTx(row, noxMode);
       return row;
     });
 
@@ -521,23 +567,26 @@
     let totalSellNox=0,totalSellUsdt=0,sellCount=0;
     let totalStakeNox=0, totalUnstakeNox=0;
     let totalTransferInNox=0, totalTransferOutNox=0;
+    let transferInCount=0, transferOutCount=0;
     for(const row of rows) {
       if(row.type==='買')    { buyCount++;  totalBuyNox+=row.noxAmt; totalBuyUsdt+=row.usdtAmt||0; }
       if(row.type==='賣')    { sellCount++; totalSellNox+=row.noxAmt;totalSellUsdt+=row.usdtAmt||0; }
       if(row.type==='質押')   totalStakeNox+=row.noxAmt;
       if(row.type==='解質押') totalUnstakeNox+=row.noxAmt;
-      if(row.type==='轉入') totalTransferInNox+=row.noxAmt;
-      if(row.type==='轉出') totalTransferOutNox+=row.noxAmt;
+      if(row.type==='轉入') { transferInCount++; totalTransferInNox+=row.noxAmt; }
+      if(row.type==='轉出') { transferOutCount++; totalTransferOutNox+=row.noxAmt; }
     }
     const netNox = (totalBuyNox + totalTransferInNox) - (totalSellNox + totalTransferOutNox);
     const netStakeNox = totalStakeNox - totalUnstakeNox;
     const stakeRate = totalBuyNox>0 && netStakeNox>0 ? netStakeNox/totalBuyNox : null;
 
     const result = {
+      chainKey:chain.key, tokenContract, tokenSymbol, noxMode,
       rows, buyCount, sellCount,
       totalBuyNox, totalBuyUsdt, totalSellNox, totalSellUsdt,
       totalStakeNox, totalUnstakeNox, netStakeNox, stakeRate,
       totalTransferInNox, totalTransferOutNox,
+      transferInCount, transferOutCount,
       avgBuy:  buyCount&&totalBuyUsdt   ? totalBuyUsdt/totalBuyNox   : null,
       avgSell: sellCount&&totalSellUsdt ? totalSellUsdt/totalSellNox : null,
       netNox,
@@ -547,20 +596,23 @@
     return result;
   }
 
-  function buildTxTable(rows, tableId='') {
-    if(!rows.length) return '<div class="empty-state" style="padding:30px"><div class="icon" style="font-size:32px">📭</div><p>沒有 NOX 交易紀錄</p></div>';
+  function buildTxTable(rows, tableId='', context={}) {
+    const chain = CHAIN_CONFIGS[context.chainKey] || CHAIN_CONFIGS.arbitrum;
+    const symbol = context.tokenSymbol || 'TOKEN';
+    const noxMode = !!context.noxMode;
+    if(!rows.length) return `<div class="empty-state" style="padding:30px"><div class="icon" style="font-size:32px">📭</div><p>沒有 ${escHtml(symbol)} 交易紀錄</p></div>`;
     const idAttr = tableId ? ` id="${tableId}"` : '';
     return `<table class="tx-table"${idAttr}>
       <thead><tr>
-        <th>時間 (UTC+8)</th><th>類型</th><th>NOX 數量</th><th>USDT 金額</th><th>單價</th><th>查看</th>
+        <th>時間 (UTC+8)</th><th>類型</th><th>${escHtml(symbol)} 數量</th><th>${noxMode?'USDT 金額':'對價金額'}</th><th>單價</th><th>查看</th>
       </tr></thead>
       <tbody>${rows.map(r=>`<tr data-type="${r.type||''}">
         <td style="color:var(--text-secondary);font-size:12px">${fmtTime(r.ts)}</td>
         <td>${typeBadge(r.type||'買')}</td>
-        <td style="color:${typeColor(r.type||'轉入')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益'||r.type==='轉入')?'+':'-'}${fmt(r.noxAmt,2)} NOX</td>
+        <td style="color:${typeColor(r.type||'轉入')};font-weight:700">${(r.type==='買'||r.type==='解質押'||r.type==='質押收益'||r.type==='轉入')?'+':'-'}${fmt(r.noxAmt,2)} ${escHtml(symbol)}</td>
         <td>${(r.type==='買'||r.type==='賣')?(r.usdtAmt!=null?`<span style="color:${r.type==='買'?'var(--green)':'var(--red)'};font-weight:600">${fmt(r.usdtAmt,2)} USDT</span>`:'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
         <td>${(r.type==='買'||r.type==='賣')?(r.price!=null?fmt(r.price,4)+' U':'<span style="color:var(--text-secondary)">—</span>'):'<span style="color:var(--text-secondary);font-size:11px">N/A</span>'}</td>
-        <td>${r.hash ? `<a class="tx-link" href="https://arbiscan.io/tx/${r.hash}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
+        <td>${r.hash ? `<a class="tx-link" href="${chain.explorer}/tx/${encodeURIComponent(r.hash)}" target="_blank" rel="noopener">${r.hash.slice(0,8)}… ↗</a>` : '—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   }
@@ -588,8 +640,8 @@
     }
   }
 
-  async function findRelatedWallets(mainWallet, noxRows=[]) {
-    const txns = await fetchTransactions(mainWallet);
+  async function findRelatedWallets(mainWallet, tokenRows, chain, tokenContract, noxMode) {
+    const txns = await fetchTransactions(mainWallet, chain);
     const w = mainWallet.toLowerCase();
     const addrCount={}, addrFlow={};
 
@@ -599,19 +651,19 @@
       const to  =(tx.to?.hash||'').toLowerCase();
       const isOut = from===w;
       const other = isOut ? to : from;
-      if(!other||other===w||KNOWN_CONTRACTS.has(other)) continue;
+      if(!other||other===w||other===tokenContract||other==='0x0000000000000000000000000000000000000000'||(noxMode&&KNOWN_CONTRACTS.has(other))) continue;
       const flow = isOut?'out':'in';
       addrCount[other]=(addrCount[other]||0)+1;
       if(!addrFlow[other]) addrFlow[other]=flow;
       else if(addrFlow[other]!==flow) addrFlow[other]='both';
     }
 
-    // Also scan NOX token transfer counterparties (catches P2P token transfers
+    // Also scan token transfer counterparties (catches P2P token transfers
     // that don't appear in ETH-level tx because the contract is the tx.to)
-    for(const row of noxRows) {
+    for(const row of tokenRows) {
       if(row.type!=='轉入'&&row.type!=='轉出') continue;
       const other = row.type==='轉入' ? row.fromAddr : row.toAddr;
-      if(!other||other===w||KNOWN_CONTRACTS.has(other)||STAKING_ADDRS.has(other)) continue;
+      if(!other||other===w||other==='0x0000000000000000000000000000000000000000'||(noxMode&&(KNOWN_CONTRACTS.has(other)||STAKING_ADDRS.has(other)))) continue;
       const flow = row.type==='轉入'?'in':'out';
       addrCount[other]=(addrCount[other]||0)+1;
       if(!addrFlow[other]) addrFlow[other]=flow;
@@ -627,7 +679,7 @@
     // Filter out contracts — only keep EOA wallets
     const isEOA = await Promise.all(candidates.map(async addr => {
       try {
-        const r = await fetch(`${BS}/addresses/${addr}`);
+        const r = await fetch(`${chain.blockscout}/addresses/${addr}`);
         if(!r.ok) return true; // keep if can't verify
         const j = await r.json();
         return !j.is_contract;
@@ -642,7 +694,7 @@
 
   let _visNetwork = null;
 
-  function buildGraph(mainWallet, related) {
+  function buildGraph(mainWallet, related, tokenSymbol='TOKEN') {
     const graphEl = document.getElementById('graph-section');
     if(!related.length){ graphEl.style.display='none'; return; }
     graphEl.style.display='block';
@@ -663,7 +715,7 @@
 
     const edgesArr = [];
     for(const r of related) {
-      const opts = { color:{color:'rgba(212,168,66,0.5)',highlight:'#D4A842'}, width:2, label:'NOX', font:{color:'#9999AA',size:10,align:'middle'}, smooth:{type:'curvedCW',roundness:0.2} };
+      const opts = { color:{color:'rgba(212,168,66,0.5)',highlight:'#D4A842'}, width:2, label:tokenSymbol, font:{color:'#9999AA',size:10,align:'middle'}, smooth:{type:'curvedCW',roundness:0.2} };
       if(r.flow==='in'||r.flow==='both')  edgesArr.push({ from:r.addr, to:mainWallet, arrows:'to', ...opts });
       if(r.flow==='out'||r.flow==='both') edgesArr.push({ from:mainWallet, to:r.addr, arrows:'to', ...opts });
     }
@@ -700,29 +752,81 @@
     const rows = [...document.querySelectorAll('#main-tx-table tr[data-type]')]
       .filter(tr => tr.style.display !== 'none')
       .map(tr => [...tr.querySelectorAll('td')].map(td => `"${td.innerText.replace(/"/g,'""')}"`).join(','));
-    const header = '"時間","類型","NOX數量","USDT金額","單價","交易Hash"';
+    const symbol = window._currentTokenSymbol || 'TOKEN';
+    const header = `"時間","類型","${symbol}數量","對價金額","單價","交易Hash"`;
     const csv = '﻿' + header + '\n' + rows.join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
     const addr = document.getElementById('main-note-row').dataset.addr || 'wallet';
-    a.download = `nox-txs-${shortAddr(addr)}.csv`;
+    a.download = `${symbol.toLowerCase()}-txs-${shortAddr(addr)}.csv`;
     a.click();
   }
 
+  function setText(id, text) { document.getElementById(id).textContent=text; }
+
+  function updateContextUi(symbol='') {
+    const chain=getSelectedChain();
+    const token=document.getElementById('token-input').value.trim().toLowerCase();
+    const noxMode=isEvmAddress(token)&&isDefaultNoxContext(chain,token);
+    const displaySymbol=noxMode?'NOX':(symbol||'EVM 代幣');
+    setText('tracker-title', `${displaySymbol} 持倉追蹤器`);
+    setText('tracker-subtitle', noxMode ? '查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包' : `查詢 ${chain.name} 上指定 ERC-20 代幣的持倉與轉帳紀錄`);
+    setText('tracker-footer', `${displaySymbol} Wallet Tracker · 資料來源：Blockscout v2 · ${chain.name}`);
+  }
+
+  function renderStats(d) {
+    const symbol=d.tokenSymbol;
+    if(d.noxMode) {
+      setText('s-in-label','買入次數'); setText('s-out-label','賣出次數'); setText('s-net-label','持有 NOX（估）');
+      setText('s-avg-in-label','均買價'); setText('s-avg-out-label','均賣價'); setText('s-extra-label','淨質押量');
+      setText('s-buy-count',d.buyCount); setText('s-buy-usdt',fmt(d.totalBuyUsdt,2)+' USDT');
+      setText('s-sell-count',d.sellCount); setText('s-sell-usdt',fmt(d.totalSellUsdt,2)+' USDT');
+      setText('s-net-nox',fmt(d.netNox,0)+' NOX'); setText('s-net-usdt',(d.netUsdt>=0?'+':'')+fmt(d.netUsdt,2)+' USDT');
+      setText('s-avg-buy',d.avgBuy?fmt(d.avgBuy,4):'—'); setText('s-avg-in-sub','USDT/NOX');
+      setText('s-avg-sell',d.avgSell?fmt(d.avgSell,4):'—'); setText('s-avg-out-sub','USDT/NOX');
+      setText('s-stake-nox',fmt(d.netStakeNox,0)+' NOX'); setText('s-stake-sub',d.stakeRate!=null?'佔買入 '+fmt(d.stakeRate*100,1)+'%':'質押-解質押 NOX');
+      return;
+    }
+    setText('s-in-label','轉入次數'); setText('s-out-label','轉出次數'); setText('s-net-label',`持有 ${symbol}（估）`);
+    setText('s-avg-in-label','轉入總量'); setText('s-avg-out-label','轉出總量'); setText('s-extra-label','交易筆數');
+    setText('s-buy-count',d.transferInCount); setText('s-buy-usdt',fmt(d.totalTransferInNox,2)+' '+symbol);
+    setText('s-sell-count',d.transferOutCount); setText('s-sell-usdt',fmt(d.totalTransferOutNox,2)+' '+symbol);
+    setText('s-net-nox',fmt(d.netNox,2)+' '+symbol); setText('s-net-usdt',CHAIN_CONFIGS[d.chainKey].name);
+    setText('s-avg-buy',fmt(d.totalTransferInNox,2)); setText('s-avg-in-sub',symbol);
+    setText('s-avg-sell',fmt(d.totalTransferOutNox,2)); setText('s-avg-out-sub',symbol);
+    setText('s-stake-nox',d.rows.length); setText('s-stake-sub','ERC-20 transfers');
+  }
+
+  function handleContextChange() {
+    updateContextUi();
+    document.getElementById('stats-section').style.display='none';
+    document.getElementById('related-card').style.display='none';
+    document.getElementById('graph-section').style.display='none';
+    document.getElementById('tx-count').style.display='none';
+    document.getElementById('export-btn').style.display='none';
+    document.getElementById('table-body').innerHTML='<div class="empty-state"><div class="icon">🔍</div><p>輸入錢包地址並查詢此鏈上的代幣紀錄</p></div>';
+  }
 
   function refreshSearch() {
     const wallet = document.getElementById('wallet-input').value.trim().toLowerCase();
-    if(wallet) sessionStorage.removeItem('nox_sess_'+wallet);
+    const token = document.getElementById('token-input').value.trim().toLowerCase();
+    if(isEvmAddress(wallet)&&isEvmAddress(token)) sessionStorage.removeItem(buildCacheKey(wallet,token,getSelectedChain()));
     search();
   }
 
   async function search() {
     const wallet=document.getElementById('wallet-input').value.trim().toLowerCase();
-    if(!wallet||!wallet.startsWith('0x')||wallet.length!==42){ alert('請輸入有效的錢包地址'); return; }
-    history.replaceState(null,'',`?a=${wallet}`);
+    const tokenContract=document.getElementById('token-input').value.trim().toLowerCase();
+    const chain=getSelectedChain();
+    if(!isEvmAddress(tokenContract)){ alert('請輸入有效的代幣合約地址（0x + 40 位十六進位）'); return; }
+    if(!isEvmAddress(wallet)){ alert('請輸入有效的錢包地址（0x + 40 位十六進位）'); return; }
+    const params=new URLSearchParams({a:wallet,chain:chain.key,token:tokenContract});
+    history.replaceState(null,'',`?${params.toString()}`);
 
     const btn=document.getElementById('search-btn');
     btn.disabled=true; btn.textContent='查詢中…';
+    document.getElementById('chain-select').disabled=true;
+    document.getElementById('token-input').disabled=true;
     document.getElementById('stats-section').style.display='none';
     document.getElementById('related-card').style.display='none';
     document.getElementById('graph-section').style.display='none';
@@ -738,35 +842,28 @@
     };
 
     try {
-      const d = await fetchNoxData(wallet, _onProgress);
+      const d = await fetchTokenData(wallet, tokenContract, chain, _onProgress);
+      window._currentTokenSymbol=d.tokenSymbol;
+      updateContextUi(d.tokenSymbol);
 
-      document.getElementById('main-table-title').textContent=`${shortAddr(wallet)} 交易紀錄`;
+      document.getElementById('main-table-title').textContent=`${shortAddr(wallet)} · ${d.tokenSymbol} 交易紀錄`;
       showMainNoteRow(wallet);
 
       if(!d.rows.length) {
-        document.getElementById('table-body').innerHTML='<div class="empty-state"><div class="icon">📭</div><p>此地址沒有 NOX 交易紀錄</p></div>';
+        document.getElementById('table-body').innerHTML=`<div class="empty-state"><div class="icon">📭</div><p>此地址沒有 ${escHtml(d.tokenSymbol)} 交易紀錄</p></div>`;
       } else {
         const ce=document.getElementById('tx-count');
         ce.textContent=d.rows.length+' 筆'; ce.style.display='inline-block';
         document.getElementById('export-btn').style.display='';
         document.getElementById('refresh-btn').style.display='';
-        document.getElementById('s-buy-count').textContent=d.buyCount;
-        document.getElementById('s-buy-usdt').textContent=fmt(d.totalBuyUsdt,2)+' USDT';
-        document.getElementById('s-sell-count').textContent=d.sellCount;
-        document.getElementById('s-sell-usdt').textContent=fmt(d.totalSellUsdt,2)+' USDT';
-        document.getElementById('s-net-nox').textContent=fmt(d.netNox,0)+' NOX';
-        document.getElementById('s-net-usdt').textContent=(d.netUsdt>=0?'+':'')+fmt(d.netUsdt,2)+' USDT';
-        document.getElementById('s-avg-buy').textContent=d.avgBuy?fmt(d.avgBuy,4):'—';
-        document.getElementById('s-avg-sell').textContent=d.avgSell?fmt(d.avgSell,4):'—';
-        document.getElementById('s-stake-nox').textContent=fmt(d.netStakeNox,0)+' NOX';
-        document.getElementById('s-stake-sub').textContent=d.stakeRate!=null?'佔買入 '+fmt(d.stakeRate*100,1)+'%':'質押-解質押 NOX';
+        renderStats(d);
         document.getElementById('stats-section').style.display='block';
         window._txTotal=d.rows.length;
-        document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table');
+        document.getElementById('table-body').innerHTML=buildFilterBar(d.rows)+buildTxTable(d.rows,'main-tx-table',d);
         if(window._dataTruncated) {
           const warn=document.createElement('p');
           warn.style.cssText='text-align:center;padding:10px;font-size:12px;color:var(--gold);opacity:0.8;';
-          warn.textContent='⚠️ 資料筆數已達上限，部分早期交易可能未顯示。建議設定 Arbiscan API Key 取得完整記錄。';
+          warn.textContent='⚠️ 資料筆數已達上限，部分早期交易可能未顯示。可設定 Etherscan V2 API Key 後重新查詢。';
           document.getElementById('table-body').appendChild(warn);
         }
       }
@@ -779,13 +876,16 @@
       progressEl.style.display='block';
       progressEl.textContent='正在掃描關聯錢包…';
 
-      const related=await findRelatedWallets(wallet, d.rows);
+      const related=await findRelatedWallets(wallet, d.rows, chain, tokenContract, d.noxMode);
 
       if(!related.length) {
         document.getElementById('related-count').textContent='無';
         progressEl.style.display='none';
         document.getElementById('related-list').innerHTML='<div class="empty-state" style="padding:30px"><p>未發現有轉帳往來的關聯錢包</p></div>';
-        btn.disabled=false; btn.textContent='查詢'; return;
+        btn.disabled=false; btn.textContent='查詢';
+        document.getElementById('chain-select').disabled=false;
+        document.getElementById('token-input').disabled=false;
+        return;
       }
 
       document.getElementById('related-count').textContent=related.length+' 個';
@@ -821,43 +921,48 @@
       await Promise.allSettled(related.map(async ({addr},i) => {
         const cid='rc'+i;
         try {
-          const rd=await fetchNoxData(addr);
+          const rd=await fetchTokenData(addr, tokenContract, chain);
           const parts=[];
           if(rd.buyCount)  parts.push(`買 ${rd.buyCount} 筆`);
           if(rd.sellCount) parts.push(`賣 ${rd.sellCount} 筆`);
-          if(!rd.rows.length) parts.push('無 NOX 紀錄');
+          if(rd.transferInCount) parts.push(`轉入 ${rd.transferInCount} 筆`);
+          if(rd.transferOutCount) parts.push(`轉出 ${rd.transferOutCount} 筆`);
+          if(!rd.rows.length) parts.push(`無 ${d.tokenSymbol} 紀錄`);
           document.getElementById('rsummary-'+cid).textContent=parts.join(' · ');
-          document.getElementById('rb-'+cid).innerHTML=buildTxTable(rd.rows);
+          document.getElementById('rb-'+cid).innerHTML=buildTxTable(rd.rows,'',rd);
         } catch(e) {
           document.getElementById('rsummary-'+cid).textContent='查詢失敗';
-          document.getElementById('rb-'+cid).innerHTML=`<div class="error-state" style="padding:16px"><p>⚠️ ${e.message}</p></div>`;
+          document.getElementById('rb-'+cid).innerHTML=`<div class="error-state" style="padding:16px"><p>⚠️ ${escHtml(e.message)}</p></div>`;
         }
         const done=++completedCount;
         document.getElementById('related-count').textContent=done<related.length?`已完成 ${done}/${related.length}`:`${related.length} 個`;
       }));
 
       progressEl.style.display='none';
-      buildGraph(wallet, related);
+      buildGraph(wallet, related, d.tokenSymbol);
     } catch(e) {
-      const msg = e.name==='AbortError' ? '查詢超時（>25s），請稍後重試或改用 Arbiscan 模式' : `查詢失敗：${e.message}`;
-      document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ ${msg}</p></div>`;
+      const msg = e.name==='AbortError' ? '查詢超時（>25s），請稍後重試或設定 Etherscan V2 Key' : `查詢失敗：${e.message}`;
+      document.getElementById('table-body').innerHTML=`<div class="error-state"><p>⚠️ ${escHtml(msg)}</p></div>`;
     }
 
     btn.disabled=false; btn.textContent='查詢';
+    document.getElementById('chain-select').disabled=false;
+    document.getElementById('token-input').disabled=false;
   }
 
   // ── Settings Modal ──────────────────────────────────────────────────
   function currentModeText() {
-    return getArbiscanKey() ? '⚡ Arbiscan 極速模式' : '🔗 Blockscout 標準模式';
+    return getEtherscanKey() ? '⚡ Etherscan V2 模式（失敗時自動切回 Blockscout）' : '🔗 Blockscout v2 免 Key 模式';
   }
 
   function updateModeBadge() {
     const badge = document.getElementById('api-mode-badge');
-    badge.style.display = getArbiscanKey() ? '' : 'none';
+    badge.textContent='⚡ Etherscan V2 Mode';
+    badge.style.display = getEtherscanKey() ? '' : 'none';
   }
 
   function openSettings() {
-    document.getElementById('arbiscan-key-input').value = getArbiscanKey();
+    document.getElementById('etherscan-key-input').value = getEtherscanKey();
     document.getElementById('modal-status').textContent = currentModeText();
     document.getElementById('settings-modal').classList.add('open');
   }
@@ -867,15 +972,15 @@
   }
 
   function saveSettings() {
-    const key = document.getElementById('arbiscan-key-input').value.trim();
-    saveArbiscanKey(key);
+    const key = document.getElementById('etherscan-key-input').value.trim();
+    saveEtherscanKey(key);
     document.getElementById('modal-status').textContent = currentModeText();
     updateModeBadge();
   }
 
   function clearSettings() {
-    saveArbiscanKey('');
-    document.getElementById('arbiscan-key-input').value = '';
+    saveEtherscanKey('');
+    document.getElementById('etherscan-key-input').value = '';
     document.getElementById('modal-status').textContent = currentModeText();
     updateModeBadge();
   }
@@ -891,9 +996,16 @@
 
   document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('wallet-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!document.getElementById('search-btn').disabled) search(); });
+    document.getElementById('token-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!document.getElementById('search-btn').disabled) search(); });
     updateModeBadge();
-    const a=new URLSearchParams(location.search).get('a');
-    if(a&&a.startsWith('0x')&&a.length===42){
+    const query=new URLSearchParams(location.search);
+    const chainKey=query.get('chain');
+    const token=query.get('token');
+    if(CHAIN_CONFIGS[chainKey]) document.getElementById('chain-select').value=chainKey;
+    if(isEvmAddress(token||'')) document.getElementById('token-input').value=token.toLowerCase();
+    updateContextUi();
+    const a=query.get('a');
+    if(isEvmAddress(a||'')){
       document.getElementById('wallet-input').value=a;
       search();
     }
@@ -904,7 +1016,8 @@
   <div class="modal-box">
     <button class="modal-close-btn" onclick="closeSettings()">×</button>
     <div class="modal-title">API 設定</div>
-    <input class="modal-input" id="arbiscan-key-input" type="text" placeholder="Arbiscan API Key（可選，加速查詢）">
+    <input class="modal-input" id="etherscan-key-input" type="text" placeholder="Etherscan V2 API Key（可選）">
+    <p style="margin-top:10px;font-size:11px;color:var(--text-secondary)">一把 Etherscan V2 Key 可用於支援鏈；未設定或方案不支援時自動使用各鏈 Blockscout v2 公開 API。</p>
     <div class="modal-actions">
       <button class="modal-save-btn" onclick="saveSettings()">儲存</button>
       <button class="modal-clear-btn" onclick="clearSettings()">清除</button>
