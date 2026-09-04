@@ -198,6 +198,7 @@
           <option value="optimism">Optimism</option>
           <option value="polygon">Polygon</option>
           <option value="robinhood">Robinhood Chain</option>
+          <option value="bsc">BNB Smart Chain</option>
         </select>
       </div>
       <div class="field-group">
@@ -283,6 +284,7 @@
     optimism: { key:'optimism', name:'Optimism',     chainId:'10',    blockscout:'https://optimism.blockscout.com/api/v2', explorer:'https://optimism.blockscout.com' },
     polygon:  { key:'polygon',  name:'Polygon',      chainId:'137',   blockscout:'https://polygon.blockscout.com/api/v2',  explorer:'https://polygon.blockscout.com' },
     robinhood:{ key:'robinhood', name:'Robinhood Chain', chainId:'4663', blockscout:'https://robinhoodchain.blockscout.com/api/v2', explorer:'https://robinhoodchain.blockscout.com' },
+    bsc:      { key:'bsc',      name:'BNB Smart Chain', chainId:'56',   blockscout:null, explorer:'https://bscscan.com' },
   });
   const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -488,11 +490,42 @@
       try { return await fetchTransfersEtherscan(address, tokenContract, key, chain, onProgress); }
       catch(e) { console.warn('Etherscan V2 failed; falling back to Blockscout:', e.message); }
     }
+    if(!chain.blockscout) {
+      throw new Error(`${chain.name} 沒有免費公開 API，請在「API 設定」輸入 Etherscan V2 Key 才能查詢`);
+    }
     return fetchTransfersBlockscout(address, tokenContract, chain, onProgress);
   }
 
   // Fetch normal transactions to find related wallets
+  // Chains without a free public Blockscout v2 instance (e.g. BSC) fall back to
+  // Etherscan V2's txlist action, which needs a user-supplied API key.
+  async function fetchTransactionsEtherscan(address, apiKey, chain, maxPages=4) {
+    const items = [];
+    for(let page=1; page<=maxPages; page++) {
+      const url = `https://api.etherscan.io/v2/api?chainid=${chain.chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=1000&sort=desc&apikey=${encodeURIComponent(apiKey)}`;
+      const r = await fetchWithTimeout(url);
+      if(!r.ok) break;
+      const j = await r.json();
+      if(j.status !== '1') {
+        if(page===1 && /no transactions found/i.test(String(j.result||j.message||''))) break;
+        break;
+      }
+      const batch = (j.result||[]).map(item => ({
+        from: { hash: (item.from||'').toLowerCase() },
+        to:   { hash: (item.to||'').toLowerCase() },
+      }));
+      items.push(...batch);
+      if(batch.length < 1000) break;
+    }
+    return items;
+  }
+
   async function fetchTransactions(address, chain, maxPages=4) {
+    if(!chain.blockscout) {
+      const key = getEtherscanKey();
+      if(!key) return []; // no free indexer for this chain without a key
+      return fetchTransactionsEtherscan(address, key, chain, maxPages);
+    }
     const items = [];
     let url = `${chain.blockscout}/addresses/${address}/transactions?filter=to%7Cfrom`;
     for(let p=0; p<maxPages; p++) {
@@ -679,7 +712,9 @@
       .map(([addr])=>addr);
 
     // Filter out contracts — only keep EOA wallets
+    // (no free Blockscout instance on some chains, e.g. BSC — skip the check there)
     const isEOA = await Promise.all(candidates.map(async addr => {
+      if(!chain.blockscout) return true;
       try {
         const r = await fetch(`${chain.blockscout}/addresses/${addr}`);
         if(!r.ok) return true; // keep if can't verify
@@ -772,7 +807,7 @@
     const noxMode=isEvmAddress(token)&&isDefaultNoxContext(chain,token);
     setText('tracker-title', '代幣追蹤器');
     setText('tracker-subtitle', noxMode ? '查詢錢包 NOX 買賣紀錄，並自動追蹤關聯錢包' : `查詢 ${chain.name} 上指定 ERC-20 代幣的持倉與轉帳紀錄`);
-    setText('tracker-footer', `代幣追蹤器 · 資料來源：Blockscout v2 · ${chain.name}`);
+    setText('tracker-footer', `代幣追蹤器 · 資料來源：${chain.blockscout ? 'Blockscout v2' : 'Etherscan V2（需 API Key）'} · ${chain.name}`);
   }
 
   function renderStats(d) {
